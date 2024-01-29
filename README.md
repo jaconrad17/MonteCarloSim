@@ -9,12 +9,16 @@
 Based on two separate Geant4 codes
 
 sFFG4MC by David Hamilton
-	http://github.com/dhamilton-glasgow/sFFG4MC (developed and tested with Geant4.10.4 and root6.22 on centos7)
+  http://github.com/dhamilton-glasgow/sFFG4MC (developed and tested with Geant4.10.4 and root6.22 on centos7)
   https://github.com/gboon18/HallC_NPS (Scattering chamber, exit beamline and target modified from this original NPS simulation)
 
 Light-Guide-MC by Angelo Rosso (based on OpNovice2)
- https://github.com/arosso17/Light-Guide-MC
- https://github.com/Geant4/geant4/tree/master/examples/extended/optical/OpNovice2
+  https://github.com/arosso17/Light-Guide-MC
+  https://github.com/Geant4/geant4/tree/master/examples/extended/optical/OpNovice2
+
+ Uses JLab's G4SBS libraries in addition to Geant4 and Root libraries
+  https://github.com/JeffersonLab/g4sbs
+  https://hallaweb.jlab.org/wiki/index.php/Documentation_of_g4sbs (how to set it up)
 
 
 	Scattering chamber, exit beamline and target modified from original NPS simulation:
