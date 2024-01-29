@@ -1,0 +1,43 @@
+##################################################################
+# Set geometry options
+##################################################################
+
+/opnovice2/detector/setBeamline 1
+/opnovice2/detector/update
+
+##################################################################
+# Set physics model options
+##################################################################
+
+/opnovice2/physics/addPhysics QGSP_BIC_EMY
+/run/initialize
+
+##################################################################
+# Set output options
+##################################################################
+
+/opnovice2/output/setOutputFile vis_root.root
+
+##################################################################
+# Set visualisation options
+##################################################################
+
+/vis/scene/create
+/vis/open OGLS 800x800-0+0
+/vis/scene/add/trajectories
+/vis/scene/add/magneticField
+/vis/scene/endOfEventAction accumulate
+/vis/viewer/select viewer-0
+/vis/viewer/rebuild
+
+/vis/viewer/set/style s             
+/vis/viewer/set/hiddenEdge 1        
+/vis/viewer/set/background white    
+                                      
+##################################################################
+# Set generator options
+##################################################################
+
+/opnovice2/generator/Mode 1
+/opnovice2/generator/Nevents 1
+/opnovice2/generator/InputFile gen_elastic.root

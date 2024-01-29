@@ -1,0 +1,26 @@
+##################################################################
+# Set geometry options
+##################################################################
+
+/opnovice2/detector/setBeamline 0
+/opnovice2/detector/update
+
+##################################################################
+# Set physics model options
+##################################################################
+
+/opnovice2/physics/addPhysics QGSP_BIC_EMY
+/run/initialize
+
+##################################################################
+# Set output options
+##################################################################
+
+/opnovice2/output/setOutputFile batch_root.root
+
+##################################################################
+# Set generator options
+##################################################################
+
+/opnovice2/generator/Mode 1
+/opnovice2/generator/InputFile testgen.root

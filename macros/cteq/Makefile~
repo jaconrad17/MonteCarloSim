@@ -1,0 +1,30 @@
+.PHONY : clean
+
+SHELL = /bin/sh
+CC    = gcc
+CFLAGS = -fPIC -pipe -pthread -O2 #-DCTEQ_TBL_PATH=\"/home/david/JLab/A/g4sbs/g4sbs/cteq-tbls\"
+#CFLAGS = -fPIC -pipe -pthread -O2 -DCTEQ_TBL_PATH=\"/home/david/JLab/A/g4sbs/g4sbs/cteq-tbls\"
+LDFLAGS= -shared
+
+SOURCES = $(shell echo *.c)
+HEADERS = $(shell echo *.h)
+OBJECTS = $(SOURCES:.c=.o)
+
+TARGET  = libcteq.so
+
+all: $(TARGET)
+
+clean: 
+	rm -f $(OBJECTS) $(TARGET)
+
+$(TARGET): $(OBJECTS) 
+	$(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS)
+
+#/usr/bin/gcc   -I/cern/root/v6.14.04/include -I/home/david/JLab/A/g4sbs/g4sbs/src -I/home/david/JLab/A/g4sbs/g4sbs/src/dss2007 -I/home/david/JLab/A/g4sbs/g4sbs/build/include  -o cteq-database.c.o -c cteq-database.c
+#/usr/bin/gcc -fPIC -pipe -pthread -O2 -DCTEQ_TBL_PATH=\"/home/david/JLab/A/g4sbs/g4sbs/cteq-tbls\"  -I/cern/root/v6.14.04/include -I/home/david/JLab/A/g4sbs/g4sbs/src -I/home/david/JLab/A/g4sbs/g4sbs/src/dss2007 -I/home/david/JLab/A/g4sbs/g4sbs/build/include  -o cteqpdf.c.o -c cteqpdf.c
+#/usr/bin/gcc -fPIC -pipe -pthread -O2 -DCTEQ_TBL_PATH=\"/home/david/JLab/A/g4sbs/g4sbs/cteq-tbls\"  -I/cern/root/v6.14.04/include -I/home/david/JLab/A/g4sbs/g4sbs/src -I/home/david/JLab/A/g4sbs/g4sbs/src/dss2007 -I/home/david/JLab/A/g4sbs/g4sbs/build/include  -o cteqpdf-f77.c.o -c cteqpdf-f77.c
+
+#gcc -shared -o libcteq.so *.o
+
+#/usr/bin/ar qc libsbscteq.so  cteq-database.c.o cteqpdf-f77.c.o cteqpdf.c.o
+#/usr/bin/ranlib libsbscteq.so
