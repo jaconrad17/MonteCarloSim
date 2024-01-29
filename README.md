@@ -1,10 +1,10 @@
 ------------------------------------------------------------------------
 
- OpNovice2: a Geant4 framework for simulating the JLab sFF experiment
-
+ OpNovice2: a Geant4 framework for Monte Carlo Simulation of the JLab sFF experiment by Jonathan A. Conrad
+  https://github.com/jaconrad17/MonteCarloSim
+  (developed and tested with Geant4.11.2 and root6.30 on macOSX)
+  
 ------------------------------------------------------------------------
-	https://github.com/jaconrad17/MonteCarloSim
-	(developed and tested with Geant4.11.2 and root6.30 on macOSX)
 
 Based on two separate Geant4 codes
 
