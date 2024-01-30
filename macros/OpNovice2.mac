@@ -21,9 +21,9 @@
 
 /run/initialize
 #
-/gun/particle opticalphoton
-/gun/energy 3 eV
-/gun/position 0 0 0 cm
+/gun/particle e-
+/gun/energy 6.6 GeV
+/gun/position 0 0 -300. cm
 /gun/direction 1 0 0 
 /opnovice2/gun/optPhotonPolar
 #
