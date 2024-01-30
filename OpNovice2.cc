@@ -39,9 +39,16 @@
 #include "G4UItcsh.hh"
 #include "G4UIterminal.hh"
 
-// from OpNovice2
-#include "ActionInitialization.hh"
+// Initialized Modules
 #include "DetectorConstruction.hh"
+#include "PrimaryGeneratorAction.hh"
+#include "RunAction.hh"
+#include "SteppingAction.hh"
+#include "TrackingAction.hh"
+#include "OutputManager.hh"
+#include "EventAction.hh"
+
+// from OpNovice2
 #include "G4EmStandardPhysics_option4.hh"
 #include "G4OpticalPhysics.hh"
 #include "G4RunManagerFactory.hh"
@@ -80,7 +87,19 @@ int main(int argc, char** argv)
     DetectorConstruction* detCon = new DetectorConstruction();
     runManager->SetUserInitialization(detCon);
 
-    runManager->SetUserInitialization(new ActionInitialization());
+    PrimaryGeneratorAction* pga = new PrimaryGeneratorAction();
+    runManager->SetUserInitialization(pga);
+
+    RunAction* runAction = new RunAction(pga);
+    runManager->SetUserInitialization(runAction);
+
+    OutputManager* outManager = new OutputManager();
+
+    EventAction* event = new EventAction(runAction, outManager, pga);
+    runManager->SetUserAction(event);
+
+    runManager->SetUserAction(new SteppingAction(event));
+    runManager->SetUserAction(new TrackingAction);
 
     // initialize visualization
     G4VisManager* visManager = nullptr;
