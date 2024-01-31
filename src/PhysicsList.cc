@@ -72,6 +72,9 @@ PhysicsList::PhysicsList() : G4VModularPhysicsList()
     biciIsRegistered = false;
     locIonIonInelasticIsRegistered = false;
     radioactiveDecayIsRegistered = false;
+
+    // Set verbose level
+    SetVerboseLevel(1);
     
     // EM physics
     emPhysicsList = new G4EmStandardPhysics_option4(1); // Default Physics List configuration
