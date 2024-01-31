@@ -1,3 +1,5 @@
+#include <set>
+
 // Include the PhysicsList header and the PhysicsListMessenger header
 #include "PhysicsList.hh"
 #include "PhysicsListMessenger.hh"
@@ -70,12 +72,9 @@ PhysicsList::PhysicsList() : G4VModularPhysicsList()
     biciIsRegistered = false;
     locIonIonInelasticIsRegistered = false;
     radioactiveDecayIsRegistered = false;
-
-    // Set verbose level
-    SetVerboseLevel(1);
     
     // EM physics
-    emPhysicsList = new G4EmStandardPhysics_option4(1);
+    emPhysicsList = new G4EmStandardPhysics_option4(1); // Default Physics List configuration
     emName = G4String("emstandard_opt4");
     
     //  Construct Optical Physics
@@ -128,6 +127,19 @@ void PhysicsList::ConstructProcess()
 
 //---------------------------------------------------------------------------
 
+// Method to set verbose level
+void PhysicsList::SetVerboseLevel(G4int level)
+{
+    verboseLevel = level;
+
+    // Set verbose level for individual physics lists
+    emPhysicsList->SetVerboseLevel(level);
+    decPhysicsList->SetVerboseLevel(level);
+    raddecayList->SetVerboseLevel(level);
+}
+
+//---------------------------------------------------------------------------
+
 // Method to add a physics list by name
 void PhysicsList::AddPhysicsList(const G4String& name)
 {
@@ -137,76 +149,88 @@ void PhysicsList::AddPhysicsList(const G4String& name)
         G4cout << "PhysicsList::AddPhysicsList: <" << name << ">" << G4endl;
     }
 
-    // Check if the physics list to be added is the same as the current electromagnetic physics list
-    if (name == emName) 
-        return;
+    // Sets of valid options for PhysicsList
+    std::set<G4String> validOptionsA = {"standard_opt4", "standard_opt3", "LowE_Livermore", name == "LowE_Penelope"};
+    std::set<G4String> validOptionsB = {"QGSP_BIC_EMY", "QGSP_BIC_HP", "QGSP_BERT_HP", name == "FTFP_BERT_HP"};
 
     // Check different physics list names and perform corresponding actions
-    if (name == "standard_opt4") 
-    {
-        // Activate G4EmStandardPhysics_option4
-        emName = name;
-        delete emPhysicsList;
-        emPhysicsList.reset(new G4EmStandardPhysics_option4());
-        G4RunManager::GetRunManager()->PhysicsHasBeenModified();
-        G4cout << "THE FOLLOWING ELECTROMAGNETIC PHYSICS LIST HAS BEEN ACTIVATED: G4EmStandardPhysics_option4" << G4endl;
+    if (name == emName) {
+        return;
     }
-    else if (name == "standard_opt3") 
-    {
-        // Activate G4EmStandardPhysics_option3
+    else if (validOptionsA.count(name) > 0) {
         emName = name;
-        emPhysicsList.reset(new G4EmStandardPhysics_option3());
-        G4RunManager::GetRunManager()->PhysicsHasBeenModified();
-        G4cout << "THE FOLLOWING ELECTROMAGNETIC PHYSICS LIST HAS BEEN ACTIVATED: G4EmStandardPhysics_option3" << G4endl;
-    } 
-    else if (name == "LowE_Livermore") 
-    {
-        // Activate G4EmLivermorePhysics
-        emName = name;
-        emPhysicsList.reset(new G4EmLivermorePhysics());
-        G4RunManager::GetRunManager()->PhysicsHasBeenModified();
-        G4cout << "THE FOLLOWING ELECTROMAGNETIC PHYSICS LIST HAS BEEN ACTIVATED: G4EmLivermorePhysics" << G4endl;
-    } 
-    else if (name == "LowE_Penelope") 
-    {
-        // Activate G4EmPenelopePhysics
-        emName = name;
-        emPhysicsList.reset(new G4EmPenelopePhysics());
-        G4RunManager::GetRunManager()->PhysicsHasBeenModified();
-        G4cout << "THE FOLLOWING ELECTROMAGNETIC PHYSICS LIST HAS BEEN ACTIVATED: G4EmPenelopePhysics" << G4endl; 
+        ActivateElectromagneticPhysics(name);
     }
-    // Add QGSP_BIC physics and other relevant physics constructors
-    else if (name == "QGSP_BIC_EMY" || name == "QGSP_BIC_HP" || name == "QGSP_BERT_HP" || name == "FTFP_BERT_HP") 
-    {
-        // Select QGSP_BIC_EMY, QGSP_BIC_HP, QGSP_BERT_HP, or FTFP_BERT_HP physics
+    else if (validOptionsB.count(name) > 0) {
+        emName = name;
         AddPhysicsList("emstandard_opt3");
-        switch(name) 
-        {
-            case name == "QGSP_BIC_EMY":
-                hadronPhys.push_back(std::make_unique<G4HadronPhysicsQGSP_BIC>());
-                hadronPhys.push_back(std::make_unique<G4NeutronTrackingCut>());
-                break;
-            case name == "QGSP_BIC_HP": 
-                hadronPhys.push_back(std::make_unique<G4HadronPhysicsQGSP_BIC_HP>()); 
-                break;
-            case name == "QGSP_BERT_HP": 
-                hadronPhys.push_back(std::make_unique<G4HadronPhysicsQGSP_BERT_HP>()); 
-                break;
-            case name == "FTFP_BERT_HP": 
-                hadronPhys.push_back(std::make_unique<G4HadronPhysicsFTFP_BERT_HP>()); 
-                break;
-            default: G4cout << "Error in QGSP_BIC & FTFP_BERT physics list condition" << G4endl;
-        }
-        hadronPhys.push_back(std::make_unique<G4EmExtraPhysics>());
-        hadronPhys.push_back(std::make_unique<G4HadronElasticPhysics>());
-        hadronPhys.push_back(std::make_unique<G4StoppingPhysics>());
-        hadronPhys.push_back(std::make_unique<G4IonBinaryCascadePhysics>());
-    } 
-    else 
-    {
-        // Display an error message if the physics list is not recognized
+        ActivateHadronPhysics(name);
+    }
+    else { // Display an error message if the physics list is not recognized
         G4cout << "PhysicsList::AddPhysicsList: <" << name << ">" << " is not defined" << G4endl;
     }
+}
+
+//---------------------------------------------------------------------------
+
+// Helper method to activate electromagnetic physics
+void PhysicsList::ActivateElectromagneticPhysics(const G4String& name)
+{
+    // Activate the corresponding electromagnetic physics list
+    if (name == "standard_opt4") { // Activate G4EmStandardPhysics_option4
+        emPhysicsList.reset(new G4EmStandardPhysics_option4());
+    }
+    else if (name == "standard_opt3") { // Activate G4EmStandardPhysics_option3
+        emPhysicsList.reset(new G4EmStandardPhysics_option3());
+    }
+    else if (name == "LowE_Livermore") { // Activate G4EmLivermorePhysics
+        emPhysicsList.reset(new G4EmLivermorePhysics());
+    }
+    else if (name == "LowE_Penelope") { // Activate G4EmPenelopePhysics
+        emPhysicsList.reset(new G4EmPenelopePhysics());
+    }
+    else {
+        // Error in reading options
+        G4cout << "ERROR IN READING ELECTROMAGNETIC PHYSICS LIST SELECTION" << G4endl;
+    }
+
+    // Modify the physics
+    G4RunManager::GetRunManager()->PhysicsHasBeenModified();
+
+    // Print a message indicating the activated electromagnetic physics list
+    G4cout << "THE FOLLOWING ELECTROMAGNETIC PHYSICS LIST HAS BEEN ACTIVATED: " << name << G4endl;
+}
+
+//---------------------------------------------------------------------------
+
+// Helper method to activate hadron physics
+void PhysicsList::ActivateHadronPhysics(const G4String& name)
+{
+    // Activate the corresponding hadron physics list
+    if (name == "QGSP_BIC_EMY") { // Activate QGSP_BIC_EMY 
+        hadronPhys.push_back(std::make_unique<G4HadronPhysicsQGSP_BIC>());
+        hadronPhys.push_back(std::make_unique<G4NeutronTrackingCut>());
+    }
+    else if (name == "QGSP_BIC_HP") { // Activates QGSP_BIC_HP
+        hadronPhys.push_back(std::make_unique<G4HadronPhysicsQGSP_BIC_HP>());
+    }
+    else if (name == "QGSP_BERT_HP") { // Activates QGSP_BERT_HP
+        hadronPhys.push_back(std::make_unique<G4HadronPhysicsQGSP_BERT_HP>());
+    }
+    else if (name == "FTFP_BERT_HP") { // Activates FTFP_BERT_HP
+        hadronPhys.push_back(std::make_unique<G4HadronPhysicsFTFP_BERT_HP>());
+    }
+    else {
+        // Error in reading options
+        G4cout << "ERROR IN READING HADRON PHYSICS LIST SELECTION" << G4endl;
+        return;
+    }
+
+    // Additional hadron physics modifications
+    hadronPhys.push_back(std::make_unique<G4EmExtraPhysics>());
+    hadronPhys.push_back(std::make_unique<G4HadronElasticPhysics>());
+    hadronPhys.push_back(std::make_unique<G4StoppingPhysics>());
+    hadronPhys.push_back(std::make_unique<G4IonBinaryCascadePhysics>());
 }
 
 //---------------------------------------------------------------------------
