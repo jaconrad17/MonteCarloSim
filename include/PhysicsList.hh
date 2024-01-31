@@ -29,6 +29,9 @@ void SetCutForPositron(G4double);
 // Method to add a physics list by name
 void AddPhysicsList(const G4String& name);
 
+// Method to set the Verbose Level
+void SetVerboseLevel(G4int level);
+
 // Method to construct procsses related to physics
 void ConstructProcess();
 
