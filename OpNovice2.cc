@@ -23,21 +23,28 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-//
-/// \file optical/OpNovice2/OpNovice2.cc
-/// \brief Main program of the optical/OpNovice2 example
-//
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-// from sFFG4MC
+// Standard C++ Libraries
 #include <stdexcept>
 #include <iostream>
+#include <unistd.h>
+
+// Geant4 Libraries
 #include "globals.hh"
 #include "CLHEP/Random/Random.h"
-
 #include "G4RunManager.hh"
 #include "G4UItcsh.hh"
 #include "G4UIterminal.hh"
+#include "G4RunManagerFactory.hh"
+#include "G4String.hh"
+#include "G4Types.hh"
+#include "G4UIExecutive.hh"
+#include "G4UImanager.hh"
+#include "G4VisExecutive.hh"
+
+// Personal Additional Libraries
+#include <fstream>
 
 // Initialized Modules
 #include "DetectorConstruction.hh"
@@ -48,87 +55,79 @@
 #include "OutputManager.hh"
 #include "EventAction.hh"
 
-// from OpNovice2
-#include "G4EmStandardPhysics_option4.hh"
-#include "G4OpticalPhysics.hh"
-#include "G4RunManagerFactory.hh"
-#include "G4String.hh"
-#include "G4Types.hh"
-#include "G4UIExecutive.hh"
-#include "G4UImanager.hh"
-#include "G4VisExecutive.hh"
-
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     // Setting Event Seed
     CLHEP::HepRandom::createInstance();
     
-    unsigned int seed = time(0) + (int) getpid();
+    // Generates a random seed for the event
+    unsigned int seed = time(0) + (int)getpid();
     unsigned int devrandseed = 0;
     FILE *fdrand = fopen("/dev/urandom", "r");
-    if ( fdrand ){
+    if (fdrand) {
         fread(&devrandseed, sizeof(int), 1, fdrand);
         seed += devrandseed;
         fclose(fdrand);
     }
-    
-    CLHEP::HepRandom::setTheSeed(seed);
+
+    // Setting the seed for the random number generator
+    CLHEP::HepRandom::setTheSeed(seed); 
     
     // detect interactive mode (if no arguments) and define UI session
     G4UIExecutive* ui = nullptr;
-    if(argc == 1) ui = new G4UIExecutive(argc, argv);
+    if(argc == 1) {
+        ui = new G4UIExecutive(argc, argv);
+    }
 
+    // creates the Geant4 RunManager using the G4RunManagerFactory Factory class
     auto runManager = G4RunManagerFactory::CreateRunManager();
-    PhysicsList* phys = new PhysicsList();
-    runManager->SetUserInitialization(phys);
-    
-    DetectorConstruction* detCon = new DetectorConstruction();
-    runManager->SetUserInitialization(detCon);
 
+    // creates a new instance of each class using dynamic memory
+    PhysicsList* phys = new PhysicsList(); // defines the Physics of the Experiment
+    DetectorConstruction* detCon = new DetectorConstruction(); // defines the Geometry and Detector of the Experiment
     PrimaryGeneratorAction* pga = new PrimaryGeneratorAction();
-    runManager->SetUserInitialization(pga);
-
     RunAction* runAction = new RunAction(pga);
-    runManager->SetUserInitialization(runAction);
-
-    OutputManager* outManager = new OutputManager();
-
+    OutputManager* outManager = new OutputManager(); // Outputs results to ROOT
     EventAction* event = new EventAction(runAction, outManager, pga);
+
+    // Configuring the RunManager with user-defined classes
+    runManager->SetUserInitialization(phys);
+    runManager->SetUserInitialization(detCon);
+    runManager->SetUserInitialization(pga);
+    runManager->SetUserInitialization(runAction);
     runManager->SetUserAction(event);
 
+    // Setting additional user actions
     runManager->SetUserAction(new SteppingAction(event));
     runManager->SetUserAction(new TrackingAction);
 
-    // initialize visualization
     G4VisManager* visManager = nullptr;
-    /*G4VisManager* visManager = new G4VisExecutive;
-    visManager->Initialize();*/
-
-    // get the pointer to the User Interface manager
     G4UImanager* UImanager = G4UImanager::GetUIpointer();
     
-    if(ui)
+    if(ui) // Interactive Mode
     {
-        // interactive mode
-        //UImanager->ApplyCommand("/control/execute ../macros/vis.mac");
+        // Setting up Geant4 visualization manager for interactive mode
         visManager = new G4VisExecutive;
         visManager->Initialize();
+
+        // Starting the Geant4 UI session for interactive mode
         ui->SessionStart();
-        delete ui;
+        delete ui; // Cleaning up the user interface session
     }
-    else
+    else // Batch Mode
     {
-        // batch mode
         if (argc > 1)
         {
             G4String fileName = argv[1];
-            // Check if the file exists before applying the command
+            // Check if the specified file exists before applying the command
             if (std::ifstream(fileName))
             {
+                // Applying Geant4 control commands from the specified file
                 G4String command  = "/control/execute ";G4String command  = "/control/execute ";
                 UImanager->ApplyCommand(command + fileName);
+
+                // Running the simulation for the specified number of events
                 G4String commandr = "/run/beamOn ";
                 G4int nev = pga->GetNEvents();
                 char snev[50];
@@ -146,11 +145,11 @@ int main(int argc, char** argv)
         }
     }
 
-    // job termination
-    delete visManager;
-    delete outManager;
-    delete runManager;
-    return 0;
+    // Cleaning up resources
+    delete visManager; // Cleaning up the visualization manager
+    delete outManager; // Cleaning up the output manager
+    delete runManager; // Cleaning up the Geant4 RunManager
+    return 0; // Exiting the program
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
