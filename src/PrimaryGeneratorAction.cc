@@ -42,6 +42,11 @@
 #include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
+#include "G4Scintillation.hh"
+#include "G4OpAbsorption.hh"
+#include "G4OpRayleigh.hh"
+#include "G4OpMieHG.hh"
+#include "G4OpBoundaryProcess.hh"
 #include "G4SystemOfUnits.hh"
 #include "Randomize.hh"
 
@@ -126,6 +131,24 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       {
         // Generate a primary vertex using fParticleGun
         fParticleGun->GeneratePrimaryVertex(anEvent);
+
+        // Set values for specific variables
+        fFlag = 999;
+        fNPrimParticles = 1;
+        fWeight = 60.e-6 / 1.602e-19;
+
+        
+        /* Retrieve properties of the generated particle and store them in arrays
+        (position, momentum direction, enery, and particle definition)
+        These arrays will be used later for ROOT mode */
+        fVx[0] = fParticleSource->GetParticlePosition().getX();
+        fVy[0] = fParticleSource->GetParticlePosition().getY();
+        fVz[0] = fParticleSource->GetParticlePosition().getZ();
+        fPx[0] = fParticleSource->GetParticleMomentumDirection().getX();
+        fPy[0] = fParticleSource->GetParticleMomentumDirection().getY();
+        fPz[0] = fParticleSource->GetParticleMomentumDirection().getZ();
+        fE[0] = fParticleSource->GetParticleEnergy();
+        fPDefinition[0] = fParticleSource->GetParticleDefinition();
 
         // Simulate optical physis interactions and produce optical photons
         SimulateOpticalPhysics(anEvent);
@@ -254,14 +277,23 @@ void PrimaryGeneratorAction::SetUpROOTInput(TString filename)
 // Simulate optical physics interactions and produce optical photons
 void PrimaryGeneratorAction::SimulateOpticalPhysics(G4Event* anEvent)
 {
-  // Use optical physics processes to produce optical photons from electrons
-  // Implement the necessary optical processes and interactions here
-  // (e.g., scintillation, Cerenkov, etc.)
-  // Example: Create optical photons and add them to the event
-  // G4OpticalPhoton* opticalPhoton = new G4OpticalPhoton();
-  // ... Set properties of optical photon ...
-  // G4PrimaryVertex* opticalVertex = anEvent->GetPrimaryVertex();
-  // opticalVertex->SetPrimary(opticalPhoton);
+  // Simulate scintillation process for electron
+  G4Scintillation* scintillationProcess = new G4Scintillation("Scintillation");
+
+  // Set properties of the scintillation process
+  scintillationProcess->SetTrackSecondariesFirst(true); // Track secondary particles first
+  scintillationProcess->SetScintillationYieldFactor(1.0); // Scintillation yield factor
+  scintillationProcess->SetScintillationExcitationRatio(1.0); // Scintillation excitation ratio
+  scintillationProcess->SetMaxNumPhotonsPerStep(100); // Maximum number of photons emitted per step
+  scintillationProcess->SetScintillationByParticleType(true); // Enable scintillation by particle type
+
+  // Create an optical photon
+  G4OpticalPhoton* opticalPhoton = new G4OpticalPhoton();
+  opticalPhoton->SetProcessDefinedStep(scintillationProcess);
+
+  // Create a primary vertex and set the optical photon as the primary
+  G4PrimaryVertex* opticalVertex = anEvent->GetPrimaryVertex();
+  opticalVertex->SetPrimary(opticalPhoton);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
