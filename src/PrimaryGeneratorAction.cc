@@ -60,8 +60,8 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   , fParticleGun(0)
 {
   // Initialize member variables
-  fMode = EPGA_BEAM;
-  fNevents = -1;
+  fMode = EPGA_OPTICAL_ELECTRON; // Assume an optical physics setup
+  fNevents = 1000; // Set a default number of events
   fEvent = 0;
   fWeight = 0;
   fFlag = 0;
@@ -77,7 +77,6 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
 
   // Get the electron particle definition from the particle table
   G4ParticleTable* fParticleTable = G4ParticleTable::GetParticleTable();
-  G4ParticleDefinition* particle = particleTable->FindParticle("e-");
 
   // Set default values for particle gun
   fRandomDirection = false;
@@ -85,7 +84,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   fPolarization = 0.;
   
   // Set the default kinematic properties for the particle gun
-  fParticleGun->SetParticleDefinition(particle);
+  fParticleGun->SetParticleDefinition(G4Electron::ElectronDefinition());
   fParticleGun->SetParticleTime(0.0 * ns);
   fParticleGun->SetParticlePosition(G4ThreeVector(0.0 * cm, 0.0 * cm, -69.0 * cm));
   fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
@@ -120,6 +119,21 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   // Switch statement based on the value of fMode  
   switch (fMode)
   {
+    // Case for optical physics involving electrons
+    case EPGA_OPTICAL_ELECTRON: 
+      // Loop over the user-defined number of events
+      for (int i = 0; i < fNevents; ++i) 
+      {
+        // Generate a primary vertex using fParticleGun
+        fParticleGun->GeneratePrimaryVertex(anEvent);
+
+        // Simulate optical physis interactions and produce optical photons
+        SimulateOpticalPhysics(anEvent);
+
+        // Increment the event counter
+        ++fEvent;
+      }
+      break;
     // Case for BEAM mode
     case EPGA_BEAM:
       // Generate a primary vertex using fParticleSource
@@ -237,6 +251,21 @@ void PrimaryGeneratorAction::SetUpROOTInput(TString filename)
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
+// Simulate optical physics interactions and produce optical photons
+void PrimaryGeneratorAction::SimulateOpticalPhysics(G4Event* anEvent)
+{
+  // Use optical physics processes to produce optical photons from electrons
+  // Implement the necessary optical processes and interactions here
+  // (e.g., scintillation, Cerenkov, etc.)
+  // Example: Create optical photons and add them to the event
+  // G4OpticalPhoton* opticalPhoton = new G4OpticalPhoton();
+  // ... Set properties of optical photon ...
+  // G4PrimaryVertex* opticalVertex = anEvent->GetPrimaryVertex();
+  // opticalVertex->SetPrimary(opticalPhoton);
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
 // Generate a random angle between 0 and 360 degrees
 void PrimaryGeneratorAction::SetOptPhotonPolar()
 {
@@ -248,11 +277,13 @@ void PrimaryGeneratorAction::SetOptPhotonPolar()
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
+// SetOptPhotonPolar method to set the polarization of optical photons wth a specified angle
 void PrimaryGeneratorAction::SetOptPhotonPolar(G4double angle)
 {
-  if(fParticleGun->GetParticleDefinition() !=
-     G4OpticalPhoton::OpticalPhotonDefinition())
+  // Check if the particle gun is an optical photon
+  if(fParticleGun->GetParticleDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
   {
+    // If not an optical photon, issue a warning and return
     G4ExceptionDescription ed;
     ed << "The particleGun is not an opticalphoton.";
     G4Exception("PrimaryGeneratorAction::SetOptPhotonPolar", "OpNovice2_004",
@@ -260,27 +291,35 @@ void PrimaryGeneratorAction::SetOptPhotonPolar(G4double angle)
     return;
   }
 
+  // Set polarization-related variables
   fPolarized    = true;
   fPolarization = angle;
 
+  // Define vectors for calculations
   G4ThreeVector normal(1., 0., 0.);
   G4ThreeVector kphoton = fParticleGun->GetParticleMomentumDirection();
   G4ThreeVector product = normal.cross(kphoton);
-  G4double modul2       = product * product;
+  G4double modul2 = product * product;
 
+  // Define perpendicular and parallel vectors based on polarization angle
   G4ThreeVector e_perpend(0., 0., 1.);
   if(modul2 > 0.)
     e_perpend = (1. / std::sqrt(modul2)) * product;
   G4ThreeVector e_paralle = e_perpend.cross(kphoton);
 
-  G4ThreeVector polar =
-    std::cos(angle) * e_paralle + std::sin(angle) * e_perpend;
+  // Calculate the polarization vector
+  G4ThreeVector polar = std::cos(angle) * e_paralle + std::sin(angle) * e_perpend;
+
+  // Set the particle polarization using the calculated vector
   fParticleGun->SetParticlePolarization(polar);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+// SetRandomDirection method to set whether to use random particle directions
 void PrimaryGeneratorAction::SetRandomDirection(G4bool val)
 {
+  // Set the flag for random direction based on the provided value
   fRandomDirection = val;
 }
 
