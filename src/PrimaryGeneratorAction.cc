@@ -60,7 +60,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   , fParticleGun(0)
 {
   // Initialize member variables
-  fMode = EPGA_OPTICAL_ELECTRON; // Assume an optical physics setup
+  fMode = EPGA_BEAM; // Assume an beam setup
   fNevents = 1000; // Set a default number of events
   fEvent = 0;
   fWeight = 0;
@@ -74,24 +74,16 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   G4int n_particle = 1;
   fParticleSource = new G4GeneralParticleSource();
   fParticleGun = new G4ParticleGun(n_particle);
-
-  // Create a messenger for this class to handle UI commands
-  fGunMessenger = new PrimaryGeneratorMessenger(this);
-
-  // Get the electron particle definition from the particle table
-  G4ParticleTable* fParticleTable = G4ParticleTable::GetParticleTable();
-  G4ParticleDefinition* fParticle = fParticleTable->FindParticle("e-");
+  fParticleTable = G4ParticleTable::GetParticleTable();
 
   // Set default values for particle gun
   fPolarized = false;
   fPolarization = 0.;
+
+  // Create a messenger for this class to handle UI commands
+  fGunMessenger = new PrimaryGeneratorMessenger(this);
+
   
-  // Set the default kinematic properties for the particle gun
-  fParticleGun->SetParticleDefinition(fParticle);
-  fParticleGun->SetParticleTime(0.0 * ns);
-  fParticleGun->SetParticlePosition(G4ThreeVector(0.0 * cm, 0.0 * cm, -69.0 * cm));
-  fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
-  fParticleGun->SetParticleEnergy(2.5 * geV);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
