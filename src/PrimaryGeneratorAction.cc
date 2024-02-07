@@ -75,13 +75,16 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   fGenTree = NULL;
   fNGenBranches = 0;
 
-  // Set up a particle gun and general particle source
+  // Set up a particle gun
   G4int n_particle = 1;
-  fParticleSource = new G4GeneralParticleSource();
   fParticleGun = new G4ParticleGun(n_particle);
+
+  // Create a messenger for this class to handle UI commands
+  fGunMessenger = new PrimaryGeneratorMessenger(this);
 
   // Get the electron particle definition from the particle table
   G4ParticleTable* fParticleTable = G4ParticleTable::GetParticleTable();
+  G4ParticleDefinition* fParticle = fParticleTable->FindParticle("e-");
 
   // Set default values for particle gun
   fRandomDirection = false;
@@ -89,14 +92,11 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   fPolarization = 0.;
   
   // Set the default kinematic properties for the particle gun
-  fParticleGun->SetParticleDefinition(G4Electron::ElectronDefinition());
+  fParticleGun->SetParticleDefinition(fParticle);
   fParticleGun->SetParticleTime(0.0 * ns);
   fParticleGun->SetParticlePosition(G4ThreeVector(0.0 * cm, 0.0 * cm, -69.0 * cm));
   fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
   fParticleGun->SetParticleEnergy(2.5 * geV);
-
-  // Create a messenger for this class to handle UI commands
-  fGunMessenger = new PrimaryGeneratorMessenger(this);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -112,7 +112,6 @@ PrimaryGeneratorAction::~PrimaryGeneratorAction()
 
   // Delete allocated memory for fParticleGun, fParticleSource, and fGunMessenger
   delete fParticleGun;
-  delete fParticleSource;
   delete fGunMessenger;
 }
 
@@ -125,48 +124,22 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   switch (fMode)
   {
     // Case for optical physics involving electrons
-    case EPGA_OPTICAL_ELECTRON: 
-      // Loop over the user-defined number of events
-      for (int i = 0; i < fNevents; ++i) 
-      {
-        // Generate a primary vertex using fParticleGun
-        fParticleGun->GeneratePrimaryVertex(anEvent);
-
-        // Set values for specific variables
-        fFlag = 999;
-        fNPrimParticles = 1;
-        fWeight = 60.e-6 / 1.602e-19;
-
-        
-        /* Retrieve properties of the generated particle and store them in arrays
-        (position, momentum direction, enery, and particle definition)
-        These arrays will be used later for ROOT mode */
-        fVx[0] = fParticleSource->GetParticlePosition().getX();
-        fVy[0] = fParticleSource->GetParticlePosition().getY();
-        fVz[0] = fParticleSource->GetParticlePosition().getZ();
-        fPx[0] = fParticleSource->GetParticleMomentumDirection().getX();
-        fPy[0] = fParticleSource->GetParticleMomentumDirection().getY();
-        fPz[0] = fParticleSource->GetParticleMomentumDirection().getZ();
-        fE[0] = fParticleSource->GetParticleEnergy();
-        fPDefinition[0] = fParticleSource->GetParticleDefinition();
-
-        // Simulate optical physis interactions and produce optical photons
-        SimulateOpticalPhysics(anEvent);
-
-        // Increment the event counter
-        ++fEvent;
-      }
-      break;
-    // Case for BEAM mode
-    case EPGA_BEAM:
-      // Generate a primary vertex using fParticleSource
-      fParticleSource->GeneratePrimaryVertex(anEvent);
-
+    case EPGA_BEAM: 
       // Set values for specific variables
       fFlag = 999;
       fNPrimParticles = 1;
       fWeight = 60.e-6 / 1.602e-19;
-
+      
+      if(fParticleGun->GetParticleDefinition() == G4OpticalPhoton::OpticalPhotonDefinition())
+      {
+        if(fPolarized)
+          SetOptPhotonPolar(fPolarization);
+        else
+          SetOptPhotonPolar();
+      }
+      // Generate a primary vertex using fParticleGun
+      fParticleGun->GeneratePrimaryVertex(anEvent);
+        
       /* Retrieve properties of the generated particle and store them in arrays
       (position, momentum direction, enery, and particle definition)
       These arrays will be used later for ROOT mode */
@@ -178,9 +151,8 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       fPz[0] = fParticleSource->GetParticleMomentumDirection().getZ();
       fE[0] = fParticleSource->GetParticleEnergy();
       fPDefinition[0] = fParticleSource->GetParticleDefinition();
-
-      break;
-
+    }
+    break;
     // Case for ROOT mode
     case EPGA_ROOT:
       // If the generator tree (fGenTree) exists
@@ -270,30 +242,6 @@ void PrimaryGeneratorAction::SetUpROOTInput(TString filename)
   G4int nev = fGenTree->GetEntries();
   if(fNevents == -1 || fNevents > nev)
     fNevents = nev;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-// Simulate optical physics interactions and produce optical photons
-void PrimaryGeneratorAction::SimulateOpticalPhysics(G4Event* anEvent)
-{
-  // Simulate scintillation process for electron
-  G4Scintillation* scintillationProcess = new G4Scintillation("Scintillation");
-
-  // Set properties of the scintillation process
-  scintillationProcess->SetTrackSecondariesFirst(true); // Track secondary particles first
-  scintillationProcess->SetScintillationYieldFactor(1.0); // Scintillation yield factor
-  scintillationProcess->SetScintillationExcitationRatio(1.0); // Scintillation excitation ratio
-  scintillationProcess->SetMaxNumPhotonsPerStep(100); // Maximum number of photons emitted per step
-  scintillationProcess->SetScintillationByParticleType(true); // Enable scintillation by particle type
-
-  // Create an optical photon
-  G4OpticalPhoton* opticalPhoton = new G4OpticalPhoton();
-  opticalPhoton->SetProcessDefinedStep(scintillationProcess);
-
-  // Create a primary vertex and set the optical photon as the primary
-  G4PrimaryVertex* opticalVertex = anEvent->GetPrimaryVertex();
-  opticalVertex->SetPrimary(opticalPhoton);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
