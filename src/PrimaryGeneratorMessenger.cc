@@ -49,71 +49,68 @@ PrimaryGeneratorMessenger::PrimaryGeneratorMessenger(
   : G4UImessenger()
   , fPrimaryAction(Gun)
 {
-    fGunDir = new G4UIdirectory("/opnovice2/generator/");
-    fGunDir->SetGuidance("PrimaryGenerator control");
+  fGunDir = new G4UIdirectory("/opnovice2/generator/");
+  fGunDir->SetGuidance("PrimaryGenerator control");
     
-    fSetModeCmd = new G4UIcmdWithAnInteger("/opnovice2/generator/Mode",this);
-    fSetModeCmd->SetGuidance("Set the mode of the generator (0 for BEAM or 1 for ROOT");
+  fSetModeCmd = new G4UIcmdWithAnInteger("/opnovice2/generator/Mode",this);
+  fSetModeCmd->SetGuidance("Set the mode of the generator (0 for BEAM or 1 for ROOT");
     
-    fSetNEventsCmd = new G4UIcmdWithAnInteger("/opnovice2/generator/Nevents",this);
-    fSetNEventsCmd->SetGuidance("Set the numnber of primary events to be generated");
+  fSetNEventsCmd = new G4UIcmdWithAnInteger("/opnovice2/generator/Nevents",this);
+  fSetNEventsCmd->SetGuidance("Set the numnber of primary events to be generated");
     
-    fPolarCmd = new G4UIcmdWithADoubleAndUnit("/opnovice2/generator/optPhotonPolar", this);
-    fPolarCmd->SetGuidance("Set linear polarization");
-    fPolarCmd->SetGuidance("  angle w.r.t. (k,n) plane");
-    fPolarCmd->SetParameterName("angle", true);
-    fPolarCmd->SetUnitCategory("Angle");
-    fPolarCmd->SetDefaultValue(-360.0);
-    fPolarCmd->SetDefaultUnit("deg");
-    fPolarCmd->AvailableForStates(G4State_Idle);
+  fPolarCmd = new G4UIcmdWithADoubleAndUnit("/opnovice2/generator/optPhotonPolar", this);
+  fPolarCmd->SetGuidance("Set linear polarization");
+  fPolarCmd->SetGuidance("  angle w.r.t. (k,n) plane");
+  fPolarCmd->SetParameterName("angle", true);
+  fPolarCmd->SetUnitCategory("Angle");
+  fPolarCmd->SetDefaultValue(-360.0);
+  fPolarCmd->SetDefaultUnit("deg");
+  fPolarCmd->AvailableForStates(G4State_Idle);
     
-    fRandomDirectionCmd =
-    new G4UIcmdWithABool("/opnovice2/generator/randomDirection", this);
-    fRandomDirectionCmd->AvailableForStates(G4State_Idle, G4State_PreInit);
-    
-    fSetInputCmd = new G4UIcmdWithAString("/opnovice2/generator/InputFile",this);
-    fSetInputCmd->SetGuidance("Set the full name and path of the file with the input ROOT ntuple (in ROOT mode)");
+  fSetInputCmd = new G4UIcmdWithAString("/opnovice2/generator/InputFile",this);
+  fSetInputCmd->SetGuidance("Set the full name and path of the file with the input ROOT ntuple (in ROOT mode)");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 PrimaryGeneratorMessenger::~PrimaryGeneratorMessenger()
 {
-  delete fPolarCmd;
   delete fGunDir;
-  delete fRandomDirectionCmd;
+  delete fSetModeCmd;
+  delete fSetNEventsCmd;
+  delete fPolarCmd;
+  delete fSetInputCmd;
+  
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void PrimaryGeneratorMessenger::SetNewValue(G4UIcommand* command,
-                                            G4String newValue)
+void PrimaryGeneratorMessenger::SetNewValue(G4UIcommand* command, G4String newValue)
 {
-    if(command == fSetModeCmd)
-    {fPrimaryAction->SetMode(fSetModeCmd->GetNewIntValue(newValue));}
-    
-    if(command == fSetNEventsCmd)
-    {fPrimaryAction->SetNEvents(fSetNEventsCmd->GetNewIntValue(newValue));}
-    
-    if(command == fSetInputCmd)
-    {fPrimaryAction->SetUpROOTInput(static_cast<TString>(newValue));}
-    
-    if(command == fPolarCmd)
+  if(command == fSetModeCmd)
+  {
+    fPrimaryAction->SetMode(fSetModeCmd->GetNewIntValue(newValue));
+  }
+  if(command == fSetNEventsCmd)
+  {
+    fPrimaryAction->SetNEvents(fSetNEventsCmd->GetNewIntValue(newValue));
+  }
+  if(command == fSetInputCmd)
+  {
+    fPrimaryAction->SetUpROOTInput(static_cast<TString>(newValue));
+  }
+  if(command == fPolarCmd)
+  {
+    G4double angle = fPolarCmd->GetNewDoubleValue(newValue);
+    if(angle == -360.0 * deg)
     {
-        G4double angle = fPolarCmd->GetNewDoubleValue(newValue);
-        if(angle == -360.0 * deg)
-        {
-            fPrimaryAction->SetOptPhotonPolar();
-        }
-        else
-        {
-            fPrimaryAction->SetOptPhotonPolar(angle);
-        }
+      fPrimaryAction->SetOptPhotonPolar();
     }
-    else if(command == fRandomDirectionCmd)
+    else
     {
-        fPrimaryAction->SetRandomDirection(true);
+      fPrimaryAction->SetOptPhotonPolar(angle);
     }
+  }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
