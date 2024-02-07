@@ -82,8 +82,6 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
 
   // Create a messenger for this class to handle UI commands
   fGunMessenger = new PrimaryGeneratorMessenger(this);
-
-  
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
