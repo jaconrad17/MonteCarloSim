@@ -42,11 +42,6 @@
 #include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
-#include "G4Scintillation.hh"
-#include "G4OpAbsorption.hh"
-#include "G4OpRayleigh.hh"
-#include "G4OpMieHG.hh"
-#include "G4OpBoundaryProcess.hh"
 #include "G4SystemOfUnits.hh"
 #include "Randomize.hh"
 
@@ -77,6 +72,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
 
   // Set up a particle gun
   G4int n_particle = 1;
+  fParticleSource = new G4GeneralParticleSource();
   fParticleGun = new G4ParticleGun(n_particle);
 
   // Create a messenger for this class to handle UI commands
@@ -87,7 +83,6 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   G4ParticleDefinition* fParticle = fParticleTable->FindParticle("e-");
 
   // Set default values for particle gun
-  fRandomDirection = false;
   fPolarized = false;
   fPolarization = 0.;
   
@@ -105,13 +100,15 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
 PrimaryGeneratorAction::~PrimaryGeneratorAction()
 {
   // Check if fGenFile is not NULL, close it and delete it
-  if(fGenFile){
+  if(fGenFile)
+  {
     fGenFile->Close();
     delete fGenFile;
   }
 
   // Delete allocated memory for fParticleGun, fParticleSource, and fGunMessenger
   delete fParticleGun;
+  delete fPartcleSource;
   delete fGunMessenger;
 }
 
@@ -125,10 +122,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   {
     // Case for optical physics involving electrons
     case EPGA_BEAM: 
-      // Set values for specific variables
-      fFlag = 999;
-      fNPrimParticles = 1;
-      fWeight = 60.e-6 / 1.602e-19;
       
       if(fParticleGun->GetParticleDefinition() == G4OpticalPhoton::OpticalPhotonDefinition())
       {
@@ -137,8 +130,13 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
         else
           SetOptPhotonPolar();
       }
-      // Generate a primary vertex using fParticleGun
-      fParticleGun->GeneratePrimaryVertex(anEvent);
+      // Generate a primary vertex using fParticleSource
+      fParticleSource->GeneratePrimaryVertex(anEvent);
+
+      // Set values for specific variables
+      fFlag = 999;
+      fNPrimParticles = 1;
+      fWeight = 60.e-6 / 1.602e-19;
         
       /* Retrieve properties of the generated particle and store them in arrays
       (position, momentum direction, enery, and particle definition)
@@ -295,11 +293,4 @@ void PrimaryGeneratorAction::SetOptPhotonPolar(G4double angle)
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-// SetRandomDirection method to set whether to use random particle directions
-void PrimaryGeneratorAction::SetRandomDirection(G4bool val)
-{
-  // Set the flag for random direction based on the provided value
-  fRandomDirection = val;
-}
 
