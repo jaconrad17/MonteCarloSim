@@ -49,21 +49,20 @@ class G4UIcmdWithABool;
 class PrimaryGeneratorMessenger : public G4UImessenger
 {
 public:
-    PrimaryGeneratorMessenger(PrimaryGeneratorAction*);
-    virtual ~PrimaryGeneratorMessenger();
+PrimaryGeneratorMessenger(PrimaryGeneratorAction*);
+virtual ~PrimaryGeneratorMessenger();
     
-    virtual void SetNewValue(G4UIcommand*, G4String);
+virtual void SetNewValue(G4UIcommand*, G4String);
     
 private:
-    PrimaryGeneratorAction* fPrimaryAction;
-    G4UIdirectory* fGunDir;
+PrimaryGeneratorAction* fPrimaryAction;    
+G4UIdirectory* fGunDir;
     
-    G4UIcmdWithAString* fSetInputCmd;
-    G4UIcmdWithAnInteger* fSetModeCmd;
-    G4UIcmdWithAnInteger* fSetNEventsCmd;
+G4UIcmdWithAString* fSetInputCmd;
+G4UIcmdWithAnInteger* fSetModeCmd;
+G4UIcmdWithAnInteger* fSetNEventsCmd;
     
-    G4UIcmdWithADoubleAndUnit* fPolarCmd;
-    G4UIcmdWithABool* fRandomDirectionCmd;
+G4UIcmdWithADoubleAndUnit* fPolarCmd;
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
