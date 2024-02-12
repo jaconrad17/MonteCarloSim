@@ -86,37 +86,33 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
     // Trigger sensitive virtual detectors
     // (note the for loop starts at 1 as 0 is the default copy number for non-SD volumes)
     // copy number 9999 is blacklisted -- do not trigger virtualSD if the particle originates in 9999
-    if( prePoint->GetTouchableHandle()->GetVolume()->GetCopyNo() != 9999 ) {
-      for(int i=1; i<=detector->GetNoSD(); i++) {
+    if( prePoint->GetTouchableHandle()->GetVolume()->GetCopyNo() != 9999 ) 
+    {
+      for(int i=1; i<=detector->GetNoSD(); i++) 
+      {
         
-        if ( prePoint->GetTouchableHandle()->GetVolume() != detector->GetDetVol(i) &&
-         endPoint->GetTouchableHandle()->GetVolume() == detector->GetDetVol(i) ) {
-      
-      if(virtualDetectorSD)
-        virtualDetectorSD->ProcessHits_constStep(aStep,NULL);
+        if (prePoint->GetTouchableHandle()->GetVolume() != detector->GetDetVol(i) && endPoint->GetTouchableHandle()->GetVolume() == detector->GetDetVol(i) ) 
+        {
+          if(virtualDetectorSD)
+            virtualDetectorSD->ProcessHits_constStep(aStep,NULL);
         }
       }
     }
     
-    static G4ParticleDefinition* opticalphoton =
-    G4OpticalPhoton::OpticalPhotonDefinition();
+    static G4ParticleDefinition* opticalphoton = G4OpticalPhoton::OpticalPhotonDefinition();
     
     G4AnalysisManager* analysisMan = G4AnalysisManager::Instance();
-    Run* run =
-    static_cast<Run*>(G4RunManager::GetRunManager()->GetNonConstCurrentRun());
+    Run* run = static_cast<Run*>(G4RunManager::GetRunManager()->GetNonConstCurrentRun());
     
-    G4Track* track          = step->GetTrack();
-    G4StepPoint* endPoint   = step->GetPostStepPoint();
+    G4Track* track = step->GetTrack();
+    G4StepPoint* endPoint = step->GetPostStepPoint();
     G4StepPoint* startPoint = step->GetPreStepPoint();
     
     //new
-    
     auto PreVolume = step->GetPreStepPoint()->GetPhysicalVolume();
     auto PostVolume = step->GetPostStepPoint()->GetPhysicalVolume();
     
-    const DetectorConstruction* detConstruction
-    = static_cast<const DetectorConstruction*>
-    (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
+    const DetectorConstruction* detConstruction = static_cast<const DetectorConstruction*>(G4RunManager::GetRunManager()->GetUserDetectorConstruction());
     auto detVolume = detConstruction->GetScoringVolume();
     auto detVolume_mid = detConstruction->GetMidVolume();
     auto scint_volume = detConstruction->GetScintVolume();
@@ -158,35 +154,25 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
     }
     fEventAction->AddCount(counter_step);
     
-    
-    
     G4int counter_step4 = 0;
     if(PreVolume == scint_volume && PostVolume == detVolume_mid)
     {
         counter_step4 += 1;
     }
     fEventAction->AddCount_mid(counter_step4);
-    
     if(PostVolume == scint_volume && PreVolume == detVolume_mid)
     {
         track->SetTrackStatus(fStopAndKill);
     }
-    
-    
-    
     const G4DynamicParticle* theParticle = track->GetDynamicParticle();
-    const G4ParticleDefinition* particleDef =
-    theParticle->GetParticleDefinition();
+    const G4ParticleDefinition* particleDef = theParticle->GetParticleDefinition();
     
-    TrackInformation* trackInfo =
-    (TrackInformation*) (track->GetUserInformation());
+    TrackInformation* trackInfo = (TrackInformation*) (track->GetUserInformation());
     
     if(particleDef == opticalphoton)
     {
-        
         const G4VProcess* pds = endPoint->GetProcessDefinedStep();
-        G4String procname     = pds->GetProcessName();
-        
+        G4String procname = pds->GetProcessName();
         if(procname.compare("OpAbsorption") == 0)
         {
             run->AddOpAbsorption();
@@ -237,26 +223,23 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
                 analysisMan->FillH1(9, time / ns);
             }
         }
-        
         // optical process has endpt on bdry,
         if(endPoint->GetStepStatus() == fGeomBoundary)
         {
             G4ThreeVector m0 = startPoint->GetMomentumDirection();
             G4ThreeVector m1 = endPoint->GetMomentumDirection();
-            
+          
             G4OpBoundaryProcessStatus theStatus = Undefined;
-            
             G4ProcessManager* OpManager = opticalphoton->GetProcessManager();
-            G4ProcessVector* postStepDoItVector =
-            OpManager->GetPostStepProcessVector(typeDoIt);
+            G4ProcessVector* postStepDoItVector = OpManager->GetPostStepProcessVector(typeDoIt);
             G4int n_proc = postStepDoItVector->entries();
             
             if(trackInfo->GetIsFirstTankX())
             {
                 G4ThreeVector momdir = endPoint->GetMomentumDirection();
-                G4double px1         = momdir.x();
-                G4double py1         = momdir.y();
-                G4double pz1         = momdir.z();
+                G4double px1 = momdir.x();
+                G4double py1 = momdir.y();
+                G4double pz1 = momdir.z();
                 if(px1 < 0.)
                 {
                     analysisMan->FillH1(11, px1);
@@ -269,16 +252,13 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
                     analysisMan->FillH1(15, py1);
                     analysisMan->FillH1(16, pz1);
                 }
-                
                 trackInfo->SetIsFirstTankX(false);
                 run->AddTotalSurface();
                 
                 for(G4int i = 0; i < n_proc; ++i)
                 {
                     G4VProcess* currentProcess = (*postStepDoItVector)[i];
-                    
-                    G4OpBoundaryProcess* opProc =
-                    dynamic_cast<G4OpBoundaryProcess*>(currentProcess);
+                    G4OpBoundaryProcess* opProc = dynamic_cast<G4OpBoundaryProcess*>(currentProcess);
                     if(opProc)
                     {
                         G4ThreeVector mom_dir = startPoint->GetMomentumDirection();
@@ -289,11 +269,10 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
                         G4double angle = startPoint->GetMomentumDirection().getTheta();
                         G4double azim = startPoint->GetMomentumDirection().getPhi();
                         
-                        
                         //G4cout << " angle/azim = " << angle / deg << "/" << azim / deg << " deg" << G4endl;
                         //G4double azim2 = std::acos(mom_x);
                         
-                        theStatus      = opProc->GetStatus();
+                        theStatus = opProc->GetStatus();
                         analysisMan->FillH1(10, theStatus);
                         switch(theStatus)
                         {
@@ -444,44 +423,40 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
             }
         }
     }
-    
     else
     {  // particle != opticalphoton
         // print how many Cerenkov and scint photons produced this step
         // this demonstrates use of GetNumPhotons()
-        auto proc_man =
-        track->GetDynamicParticle()->GetParticleDefinition()->GetProcessManager();
+        auto proc_man = track->GetDynamicParticle()->GetParticleDefinition()->GetProcessManager();
         G4ProcessVector* proc_vec = proc_man->GetPostStepProcessVector(typeDoIt);
-        G4int n_proc              = proc_vec->entries();
+        G4int n_proc = proc_vec->entries();
         
         G4int n_scint = 0;
-        G4int n_cer   = 0;
+        G4int n_cer = 0;
         for(G4int i = 0; i < n_proc; ++i)
         {
             G4String proc_name = (*proc_vec)[i]->GetProcessName();
             if(proc_name.compare("Cerenkov") == 0)
             {
                 auto cer = (G4Cerenkov*) (*proc_vec)[i];
-                n_cer    = cer->GetNumPhotons();
+                n_cer = cer->GetNumPhotons();
             }
             else if(proc_name.compare("Scintillation") == 0)
             {
                 auto scint = (G4Scintillation*) (*proc_vec)[i];
-                n_scint    = scint->GetNumPhotons();
+                n_scint = scint->GetNumPhotons();
             }
         }
         if(fVerbose > 0)
         {
             if(n_cer > 0 || n_scint > 0)
             {
-                G4cout << "In this step, " << n_cer << " Cerenkov and " << n_scint
-                << " scintillation photons were produced." << G4endl;
+                G4cout << "In this step, " << n_cer << " Cerenkov and " << n_scint << " scintillation photons were produced." << G4endl;
             }
         }
         
         // loop over secondaries, create statistics
-        const std::vector<const G4Track*>* secondaries =
-        step->GetSecondaryInCurrentStep();
+        const std::vector<const G4Track*>* secondaries = step->GetSecondaryInCurrentStep();
         
         for(auto sec : *secondaries)
         {
