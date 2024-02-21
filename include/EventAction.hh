@@ -2,9 +2,6 @@
 #define B1EventAction_h 1
 
 #include "G4UserEventAction.hh"
-#include "G4ThreeVectors.hh"
-#include "G4ParticleDefinitions.hh"
-#include "G4Event.hh"
 #include "globals.hh"
 #include "G4RunManager.hh"
 
@@ -12,8 +9,6 @@
 ///
 
 class RunAction;
-class OutputManager;
-class PrimaryGeneratorAction;
 
 class EventAction : public G4UserEventAction
 {
@@ -31,8 +26,6 @@ class EventAction : public G4UserEventAction
 
   private:
     RunAction* fRunAction = nullptr;
-    OutputManager* fOutManager = nullptr;
-    PrimaryGeneratorAction* fPGA = nullptr;
 	G4int fCounter = 0;
 	G4int fCounter_left = 0;
     G4int fCounter_right = 0;
