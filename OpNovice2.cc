@@ -29,6 +29,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <unistd.h>
+#include <fstream>
 
 // Geant4 Libraries
 #include "globals.hh"
@@ -42,9 +43,6 @@
 #include "G4UIExecutive.hh"
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
-
-// Personal Additional Libraries
-#include <fstream>
 
 // Initialized Modules
 #include "DetectorConstruction.hh"
@@ -102,7 +100,10 @@ int main(int argc, char** argv) {
     runManager->SetUserAction(new SteppingAction(event));
     runManager->SetUserAction(new TrackingAction);
 
+    // Initialize visualization
     G4VisManager* visManager = nullptr;
+
+    // Get the Pointer to the User Interface manager
     G4UImanager* UImanager = G4UImanager::GetUIpointer();
     
     if(ui) // Interactive Mode
@@ -146,7 +147,6 @@ int main(int argc, char** argv) {
     }
 
     // Cleaning up resources
-    delete visManager; // Cleaning up the visualization manager
     delete outManager; // Cleaning up the output manager
     delete runManager; // Cleaning up the Geant4 RunManager
     return 0; // Exiting the program
