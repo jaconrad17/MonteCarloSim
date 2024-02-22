@@ -23,48 +23,24 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-/// \file optical/OpNovice2/include/PrimaryGeneratorMessenger.hh
-/// \brief Definition of the PrimaryGeneratorMessenger class
 //
 //
-//
-//
+/// \file optical/OpNovice2/include/ActionInitialization.hh
+/// \brief Definition of the ActionInitialization class
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+#ifndef ActionInitialization_h
+#define ActionInitialization_h 1
 
-#ifndef PrimaryGeneratorMessenger_h
-#define PrimaryGeneratorMessenger_h 1
+#include "G4VUserActionInitialization.hh"
 
-#include "globals.hh"
-#include "G4UImessenger.hh"
-
-class PrimaryGeneratorAction;
-class G4UIdirectory;
-class G4UIcmdWithADoubleAndUnit;
-class G4UIcmdWithABool;
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-class PrimaryGeneratorMessenger : public G4UImessenger
+class ActionInitialization : public G4VUserActionInitialization
 {
 public:
-PrimaryGeneratorMessenger(PrimaryGeneratorAction*);
-virtual ~PrimaryGeneratorMessenger();
-    
-virtual void SetNewValue(G4UIcommand*, G4String);
-    
-private:
-PrimaryGeneratorAction* fPrimaryAction;    
-G4UIdirectory* fGunDir;
-    
-G4UIcmdWithAString* fSetInputCmd;
-G4UIcmdWithAnInteger* fSetModeCmd;
-G4UIcmdWithAnInteger* fSetNEventsCmd;
-    
-G4UIcmdWithADoubleAndUnit* fPolarCmd;
-};
+  ActionInitialization();
+  virtual ~ActionInitialization();
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+  virtual void BuildForMaster() const;
+  virtual void Build() const;
+};
 
 #endif

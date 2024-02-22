@@ -18,8 +18,8 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-EventAction::EventAction(RunAction* runAction, OutputManager* out, PrimaryGeneratorAction* pga)
-: fRunAction(runAction), fOutManager(out), fPGA(pga)
+EventAction::EventAction(OutputManager* out, PrimaryGeneratorAction* pga)
+: fOutManager(out), fPGA(pga)
 {;}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -33,8 +33,6 @@ void EventAction::BeginOfEventAction(const G4Event* evt)
 {
     if( evt->GetEventID() == 0)
         fOutManager->InitOutput();
-    fCounter = 0;
-    fCounter_mid = 0;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -47,9 +45,6 @@ void EventAction::EndOfEventAction(const G4Event* evt)
         printf("Event &8d/r", event_id);
         fflush(stdout);
     }
-    
-    fRunAction->AddCount(fCounter);
-    fRunAction->AddCount_mid(fCounter_mid);
     
     G4HCofThisEvent* HCE = evt->GetHCofThisEvent();
     VirtualDetectorHit* hit;

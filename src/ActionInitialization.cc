@@ -23,48 +23,50 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-/// \file optical/OpNovice2/include/PrimaryGeneratorMessenger.hh
-/// \brief Definition of the PrimaryGeneratorMessenger class
 //
-//
-//
-//
+/// \file optical/OpNovice2/src/ActionInitialization.cc
+/// \brief Implementation of the ActionInitialization class
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+#include "ActionInitialization.hh"
 
-#ifndef PrimaryGeneratorMessenger_h
-#define PrimaryGeneratorMessenger_h 1
-
-#include "globals.hh"
-#include "G4UImessenger.hh"
-
-class PrimaryGeneratorAction;
-class G4UIdirectory;
-class G4UIcmdWithADoubleAndUnit;
-class G4UIcmdWithABool;
+#include "PrimaryGeneratorAction.hh"
+#include "RunAction.hh"
+#include "SteppingAction.hh"
+#include "TrackingAction.hh"
+#include "EventAction.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-class PrimaryGeneratorMessenger : public G4UImessenger
+ActionInitialization::ActionInitialization()
+  : G4VUserActionInitialization()
+{}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+ActionInitialization::~ActionInitialization() {}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void ActionInitialization::BuildForMaster() const
 {
-public:
-PrimaryGeneratorMessenger(PrimaryGeneratorAction*);
-virtual ~PrimaryGeneratorMessenger();
-    
-virtual void SetNewValue(G4UIcommand*, G4String);
-    
-private:
-PrimaryGeneratorAction* fPrimaryAction;    
-G4UIdirectory* fGunDir;
-    
-G4UIcmdWithAString* fSetInputCmd;
-G4UIcmdWithAnInteger* fSetModeCmd;
-G4UIcmdWithAnInteger* fSetNEventsCmd;
-    
-G4UIcmdWithADoubleAndUnit* fPolarCmd;
-};
+  SetUserAction(new RunAction());
+}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-#endif
+void ActionInitialization::Build() const
+{
+  PrimaryGeneratorAction* primary = new PrimaryGeneratorAction();
+	SetUserAction(primary);
+
+	RunAction* runAction = new RunAction(primary);
+	SetUserAction(runAction);
+
+	EventAction* eventAction = new EventAction(runAction);
+	SetUserAction(eventAction);
+
+	SetUserAction(new SteppingAction(eventAction));
+	SetUserAction(new TrackingAction);
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
