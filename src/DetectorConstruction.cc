@@ -187,7 +187,6 @@ DetectorConstruction::~DetectorConstruction()
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 G4VPhysicalVolume* DetectorConstruction::Construct()
 {
     G4int SDcount = 1;
@@ -198,50 +197,45 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4SolidStore::GetInstance()->Clean();
 
     fPbWO4_material->SetMaterialPropertiesTable(fPbWO4MPT);
-    
-    
-  fTankMaterial->SetMaterialPropertiesTable(fTankMPT);
-  fTankMaterial->GetIonisation()->SetBirksConstant(0.126 * mm / MeV);
-  fScintMaterial->SetMaterialPropertiesTable(fScintMPT);
-  fWorldMaterial->SetMaterialPropertiesTable(fWorldMPT);
+    fNPSshieldMaterial->SetMaterialPropertiesTable(fNPSshieldMPT);
+    fHCALscintMaterial->SetMaterialPropertiesTable(fHCALscintMPT);
+    fHCALeabsMaterial->SetMaterialPropertiesTable(fHCALeabsMPT);
+    fHodoscintMaterial->SetMaterialPropertiesTable(fHodoscintMPT);
+    fHCALshieldMaterial->SetMaterialPropertiesTable(fHCALshieldMPT);
 
-  G4double thick = 0.25*cm;
-  G4double len = thick * 20;
+    // ------------- Volumes --------------
+    // The experimental Hall
+    G4Box* world_box = new G4Box("World", fExpHall_x, fExpHall_y, fExpHall_z);
 
-  // ------------- Volumes --------------
-  // The experimental Hall
-  G4Box* world_box = new G4Box("World", fExpHall_x, fExpHall_y, fExpHall_z);
+    fWorld_LV = new G4LogicalVolume(world_box, fWorldMaterial, "World", 0, 0, 0);
 
-  fWorld_LV = new G4LogicalVolume(world_box, fWorldMaterial, "World", 0, 0, 0);
+    fWorld_PV = new G4PVPlacement(0, G4ThreeVector(), fWorld_LV, "World", 0, false, 0);
 
-  fWorld_PV = new G4PVPlacement(0, G4ThreeVector(), fWorld_LV, "World", 0, false, 0);
+    G4RotationMatrix* Rot = new G4RotationMatrix();
+    Rot->rotateY(90*deg);
+    Rot->rotateX(90*deg - bend_ang);
 
-  G4RotationMatrix* Rot = new G4RotationMatrix();
-  Rot->rotateY(90*deg);
-  Rot->rotateX(90*deg - bend_ang);
+    G4RotationMatrix* Rott = new G4RotationMatrix();
+    Rott->rotateX(-bend_ang);
 
-  G4RotationMatrix* Rott = new G4RotationMatrix();
-  Rott->rotateX(-bend_ang);
+    G4RotationMatrix* Rotty = new G4RotationMatrix();
+    Rotty->rotateY(-90.*deg);
+    Rotty->rotateZ(90.*deg);
 
-  G4RotationMatrix* Rotty = new G4RotationMatrix();
-  Rotty->rotateY(-90.*deg);
-  Rotty->rotateZ(90.*deg);
+    G4RotationMatrix* Ro = new G4RotationMatrix();
+    Ro->rotateX(90.*deg);
 
-  G4RotationMatrix* Ro = new G4RotationMatrix();
-  Ro->rotateX(90.*deg);
+    //---------------------------------------------------------------------------
+    // Create scattering chamber, target and exit beamline
+    // Modified from original NPS simulation:
+    // https://github.com/gboon18/HallC_NPS
+    //---------------------------------------------------------------------------
 
-  //---------------------------------------------------------------------------
-  // Create scattering chamber, target and exit beamline
-  // Modified from original NPS simulation:
-  // https://github.com/gboon18/HallC_NPS
-  //---------------------------------------------------------------------------
-  
-  if(fBeamline)
-      BuildBeamline();
-  
-  else
-      BuildTarget();
-    
+    if(fBeamline)
+        BuildBeamline();
+    else
+        BuildTarget();
+
     //--------------------------------------------------------------------------- 
     // Create "NPS" electron arm
     //--------------------------------------------------------------------------- 
@@ -326,6 +320,52 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     //---------------------------------------------------------------------------
     // Create "HCAL" proton arm
     //--------------------------------------------------------------------------- 
+
+    // 44 pairs of 10mm scint + 13mm Fe = 1012 mm
+    G4int fHCALNpairs = 44;
+    G4double fHCALeabs_Z = 13.0*mm;
+    G4double fHCALscint_X = fHCALscint_Y = 150.0*mm;
+    G4double fHCALscint_Z = 1012.0*mm;
+
+    G4Box* fHCALscint_solid = new G4Box("fHCALscint_solid", 0.5*fHCALscint_X, 0.5*fHCALscint_Y, 0.5*fHCALscint_Z);
+    G4LogicalVolume* fHCALscint_LV = new G4LogicalVolume(fHCALscint_solid, fHCALscintMaterial, "fHCALscint_LV");
+    
+    G4Box* fHCALeabs_solid = new G4Box("fHCALeabs_solid", 0.5*fHCALscint_X, 0.5*fHCALscint_Y, 0.5*fHCALeabs_Z);
+    G4LogicalVolume* fHCALeabs_LV = new G4LogicalVolume(fHCALeabs_solid, fHCALeabsMaterial, "fHCALeabs_LV");
+
+    for(int iz = 0; iz < fHCALNpairs; iz++) 
+    {
+        sprintf(stmp, "feabs%d", iz);
+        new G4PVPlacement(0, G4ThreeVector(0., 0., -fHCALscint_Z/2 + (iz+0.5)*(10*mm + fHCALeabs_Z)), fHCALeabs_LV, stmp, fHCALscint_LV, false, 9999);
+    }
+
+    G4double HCAL_x, HCAL_y, HCAL_z, HCAL_th, HCAL_ph;
+    G4double HCAL_xprime, HCAL_yprime, HCAL_zprime;
+
+    for(int ix = 0; ix < fHCALNrow; ix++)
+    {
+            for(int iy = 0; iy < fHCALNcol, iy++)
+            {
+                sprintf(stmp, "hcal%d", SDcount);
+                HCAL_x = 0.0;
+                HCAL_y = -fHCALscint_Y + (ix*fHCALscint_Y);
+                HCAL_z = fHCALDist;
+
+                
+            }
+    }
+}
+
+  
+  
+  
+  
+  
+    
+    
+    
+    
+
 
 
   G4Tubs* rect_mid_curve = new G4Tubs("rect_mid1", bend_rad, bend_rad + (thick * 2), 2.49*cm, 0.*deg, bend_ang);
