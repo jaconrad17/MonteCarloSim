@@ -351,7 +351,21 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                 HCAL_y = -fHCALscint_Y + (ix*fHCALscint_Y);
                 HCAL_z = fHCALDist;
 
-                
+                HCAL_th = fHCALAngle;
+
+                HCAL_ph = 0 + ((360./fHCALNcol) * iy) *deg;
+
+                HCAL_yprime = HCAL_y * * std::cos(HCAL_th) + HCAL_z * std::sin(HCAL_th);
+                HCAL_zprime = -HCAL_y * std::sin(HCAL_th) + HCAL_z * std::cos(HCAL_th); 
+
+                HCAL_xprime = HCAL_x * std::cos(HCAL_ph) + HCAL_yprime * std::sin(HCAL_ph); 
+                HCAL_yprime = HCAL_x * std::sin(HCAL_ph) + HCAL_yprime * std::cos(HCAL_ph); 
+
+                G4Transform3D HCAL_t3d = G4Translate3D(G4ThreeVector(HCAL_xprime, HCAL_yprime, HCAL_zprime)) * G4RotateZ3D(HCAL_ph).inverse() * G4RotateX3D(HCAL_th).inverse();
+
+                fDetVol[SDcount] = new G4PVPlacement(fHCAL_t3d, fHCALscint_LV, stmp, fWorld_LV, false, SDcount);
+
+                SDcount++;
             }
     }
 }
