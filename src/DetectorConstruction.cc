@@ -271,8 +271,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                 NPS_xprime = NPS_x * std::cos(NPS_ph) + NPS_yprime * std::sin(NPS_ph);
                 NPS_yprime = NPS_x * std::sin(NPS_ph) + NPS_yprime * std::cos(NPS_ph);
 
-                G4Transform3D fNPS_t3d = G4Translate3D(G4ThreeVector(NPS_xprime, NPS_yprime, NPS_zprime)) 
-                  * G4RotateZ3D(NPS_ph).inverse() * G4RotateX3D(NPS_th).inverse();
+                G4Transform3D fNPS_t3d = G4Translate3D(G4ThreeVector(NPS_xprime, NPS_yprime, NPS_zprime)) * G4RotateZ3D(NPS_ph).inverse() * G4RotateX3D(NPS_th).inverse();
 
                 fDetVol[SDcount] new G4PVPlacement(fNPS_t3d, fPbWO4_LV, stmp, fWorld_LV, false, SDcount);
 
@@ -368,6 +367,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                 SDcount++;
             }
     }
+
+    //--------------------------------------------------------------------------- 
+    // Create hadron arm hodoscope layer
+    //--------------------------------------------------------------------------- 
+
+    G4double fHodoscint_X = 30.0 *mm;
+    G4double fHodoscint_Y = 30.0 *mm;
+    G4double fHodoscint_Z = 100.0 *mm;
 }
 
   
