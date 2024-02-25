@@ -323,7 +323,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     // 44 pairs of 10mm scint + 13mm Fe = 1012 mm
     G4int fHCALNpairs = 44;
     G4double fHCALeabs_Z = 13.0*mm;
-    G4double fHCALscint_X = fHCALscint_Y = 150.0*mm;
+    G4double fHCALscint_X = 150.0*mm;
+    G4double fHCALscint_Y = 150.0*mm;
     G4double fHCALscint_Z = 1012.0*mm;
 
     G4Box* fHCALscint_solid = new G4Box("fHCALscint_solid", 0.5*fHCALscint_X, 0.5*fHCALscint_Y, 0.5*fHCALscint_Z);
@@ -375,6 +376,79 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4double fHodoscint_X = 30.0 *mm;
     G4double fHodoscint_Y = 30.0 *mm;
     G4double fHodoscint_Z = 100.0 *mm;
+
+    G4Box* fHodoscint_solid = new G4Box("fHodoscint_solid", 0.5*fHodoscint_X, 0.5*fHodoscint_Y, 0.5*fHodoscint_Z);
+
+    G4LogicalVolume* fHodoscint_LV = new G4LogicalVolume(fHodoscint_solid, fHodoscintMaterial, "fHodoscint_LV");
+
+    G4double HODO_x, HODO_y, HODO_z, HODO_th, HODO_ph;
+    G4double HODO_xprime, HODO_yprime, HODO_zprime;
+
+    for(int ix = 0; ix < fHodoNrow; ix++)
+        {
+            for(int iy = 0; iy < fHodoNcol; iy++)
+            {
+                sprintf(stmp, "hodo%d", SDcount);
+
+                HODO_x = 0.0;
+                HODO_y = -(15*fHodoscint_Y)/2 + (ix*fHodoscint_Y);
+                HODO_z = fHCALDist - 0.5*fHCALscint_Z - 0.5*fHodoscint_Z - 20 *mm;
+
+                HODO_th = fHCALAngle;
+
+                HODO_ph = 0 + ((360./fHodoNcol) * iy) *deg;
+
+                HODO_yprime = HODO_y * std::cos(HODO_th) + HODO_z * std::sin(HODO_th); 
+                HODO_zprime = -HODO_y * std::sin(HODO_th) + HODO_z * std::cos(HODO_th);
+
+                HODO_xprime = HODO_x * std::cos(HODO_ph) + HODO_yprime * std::sin(HODO_ph);
+                HODO_yprime = HODO_x * std::sin(HODO_ph) + HODO_yprime * std::cos(HODO_ph);
+
+                G4Transform3D HODO_t3d = G4Translate3D(G4ThreeVector(HODO_xprime, HODO_yprime, HODO_zprime)) * G4RotateZ3D(HODO_ph).inverse() * G4RotateX3D(HODO_th).inverse();
+
+                fDetVol[SDcount] = new G4PVPlacement(HODO_t3d, fHodoscint_LV, stmp, fWorld_LV, false, SDcount);
+
+                SDcount++;
+            }
+        }
+
+    //--------------------------------------------------------------------------- 
+    // Create hadron arm shield
+    //--------------------------------------------------------------------------- 
+
+    G4double fHCALshield_X = fHCALscint_X;
+    G4double fHCALshield_Y = ((fHCALNrow) * fHCALscint_Y);
+    G4double fHCALshield_Z = fNPSShieldThick;
+
+    G4Box* fHCALshield_solid = new G4Box("fHCALshield_solid", 0.5*fHCALshield_X, 0.5*fHCALshield_Y, 0.5*fHCALshield_Z);
+
+    G4LogicalVolume* fHCALshield_LV = new G4LogicalVolume(fHCALshield_solid, fHCALshieldMaterial, "fHCALshield_LV");
+
+    G4double HCALshield_x, HCALshield_y, HCALshield_z, HCALshield_th, HCALshield_ph;
+    G4double HCALshield_xprime, HCALshield_yprime, HCALshield_zprime;
+
+    for(int iy = 0; iy < fHCALNcol; iy++) 
+    {
+        sprintf(stmp, "hcalshield%d", iy);
+
+        HCALshield_x = 0.0;
+        HCALshield_y = -fHCALscint_Y;
+        HCALshield_z = fHCALDist - 0.5*fHCALscint_Z - fHodoscint_Z - fHCALshield_Z - 20 *mm;
+
+        HCALshield_th = fHCALAngle;
+
+        HCALshield_ph = 0 + ((360./fHCALNcol) * iy) *deg;
+
+        HCALshield_yprime = HCALshield_z * std::sin(HCALshield_th); 
+        HCALshield_zprime = HCALshield_z * std::cos(HCALshield_th); 
+
+        HCALshield_xprime = HCALshield_x * std::cos(HCALshield_ph) + HCALshield_yprime * std::sin(HCALshield_ph); 
+        HCALshield_yprime = HCALshield_x * std::sin(HCALshield_ph) + HCALshield_yprime * std::cos(HCALshield_ph);
+
+        G4Transform3D HCALshield_t3d = G4Translate3D(G4ThreeVector(HCALshield_xprime, HCALshield_yprime, HCALshield_zprime)) * G4RotateZ3D(HCALshield_ph).inverse() * G4RotateX3D(HCALshield_th).inverse();
+
+        new G4PVPlacement(HCALshield_t3d, fHCALshield_LV, stmp, fWorld_LV, false, 0);
+    }
 }
 
   
