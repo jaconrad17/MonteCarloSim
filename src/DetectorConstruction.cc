@@ -449,38 +449,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
         new G4PVPlacement(HCALshield_t3d, fHCALshield_LV, stmp, fWorld_LV, false, 0);
     }
-}
-
-  
-  
-  
-  
-  
-    
-    
-    
-    
-
-
-
-  G4Tubs* rect_mid_curve = new G4Tubs("rect_mid1", bend_rad, bend_rad + (thick * 2), 2.49*cm, 0.*deg, bend_ang);
-  G4Box* rect_mid_straight = new G4Box("rect_mid2", 2.49*fTank_x, thick, len);
-  G4UnionSolid* rect_mid = new G4UnionSolid("rect_mid", rect_mid_curve, rect_mid_straight, Rot, G4ThreeVector((bend_rad + thick)*std::cos(bend_ang) - len*std::cos(90*deg - bend_ang), (bend_rad + thick)*std::sin(bend_ang) + len*std::sin(90*deg - bend_ang), 0));
-
-  rect_mid_LV = new G4LogicalVolume(rect_mid, fTankMaterial, "rect_mid", 0, 0, 0);
-  rect_mid_PV = new G4PVPlacement(Rotty, G4ThreeVector(0, (bend_rad + thick), 0), rect_mid_LV, "rect_mid", fWorld_LV, false, 0);
-
-
-  // PMT
-  G4Tubs* cone = new G4Tubs("Cone", 0., 2.75*cm, 5*cm, 0.*deg, 360.0*deg);
-  cone_LV = new G4LogicalVolume(cone, fWorldMaterial, "Cone", 0, 0, 0);
-  cone_PV = new G4PVPlacement(Rott, G4ThreeVector(0, (bend_rad + thick) * (1 - std::cos(bend_ang)) + 5*cm*std::sin(bend_ang) + 2*len*std::cos(90*deg - bend_ang), - (bend_rad + thick) * std::sin(bend_ang) - 5*cm*std::cos(bend_ang) - 2*len*std::sin(90*deg - bend_ang)), cone_LV, "Cone", fWorld_LV, false, 0);
-
-  // scintillator
-  G4Box* scint = new G4Box("Scint", 2.49*cm, thick, 5*cm);
-  G4LogicalVolume* scint_LV = new G4LogicalVolume(scint, fTankMaterial, "Scint", 0, 0, 0);
-  scint_PV = new G4PVPlacement(0, G4ThreeVector(0, 0, 5*cm), scint_LV, "Scint", fWorld_LV, false, 0);
-
 
     //---------------------------------------------------------------------------
     // Set Logical Attributes
@@ -491,25 +459,25 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
     fVirtualDetectoerSD = new VirtualDetectorSD("VirtualDetectorSD", fNSD);
     SDman->AddNewDetector(fVirtualDetectorSD);
-    pbwo4_log->SetSensitiveDetector(fVirtualDetectorSD);
-    scintabs_log->SetSensitiveDetector(fVirtualDetectorSD);
-    hodoscint_log->SetSensitiveDetector(fVirtualDetectorSD);
+    fPbWO4_LV->SetSensitiveDetector(fVirtualDetectorSD);
+    fHCALscint_LV->SetSensitiveDetector(fVirtualDetectorSD);
+    fHodoscint_LV->SetSensitiveDetector(fVirtualDetectorSD);
 
     fRealDetectorSD = new RealDetectorSD("RealDetectorSD", fNSD);
     SDman->AddNewDetector(fRealDetectorSD);
-    pbwo4_log->SetSensitiveDetector(fRealDetectorSD);
-    scintabs_log->SetSensitiveDetector(fRealDetectorSD);
-    hodoscint_log->SetSensitiveDetector(fRealDetectorSD);
+    fPbWO4_LV->SetSensitiveDetector(fRealDetectorSD);
+    fHCALscint_LV->SetSensitiveDetector(fRealDetectorSD);
+    fHodoscint_LV->SetSensitiveDetector(fRealDetectorSD);
     
     // Visualization
     fLogicTarget->SetVisAttributes(G4Colour::Blue());
-    pbwo4_LV->SetVisAttributes(G4Colour::Red());
-    NPSshield_LV->SetVisAttributes(G4Colour::Cyan());
-    scintabs_LV->SetVisAttributes(G4Colour::Yellow());
-    hodoscint_LV->SetVisAttributes(G4Colour::Green());
-    HCALshield_LV->SetVisAttributes(G4Colour::Cyan());
+    fPbWO4_LV->SetVisAttributes(G4Colour::Red());
+    fNPSshield_LV->SetVisAttributes(G4Colour::Cyan());
+    fHCALscint_LV->SetVisAttributes(G4Colour::Yellow());
+    fHodoscint_LV->SetVisAttributes(G4Colour::Green());
+    fHCALshield_LV->SetVisAttributes(G4Colour::Cyan());
 
-    feabs_log->SetVisAttributes(G4VisAttributes::Invisible);
+    fHCALeabs_LV->SetVisAttributes(G4VisAttributes::Invisible);
     fWorld_LV->SetVisAttributes(G4VisAttributes::Invisible);
     f
 
@@ -518,32 +486,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void DetectorConstruction::SetSurfaceSigmaAlpha(G4double v)
+void DetectorConstruction::UpdateGeometry()
 {
-  fSurface->SetSigmaAlpha(v);
-  G4RunManager::GetRunManager()->GeometryHasBeenModified();
-
-  G4cout << "Surface sigma alpha set to: " << fSurface->GetSigmaAlpha()
-         << G4endl;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void DetectorConstruction::SetSurfacePolish(G4double v)
-{
-  fSurface->SetPolish(v);
-  G4RunManager::GetRunManager()->GeometryHasBeenModified();
-
-  G4cout << "Surface polish set to: " << fSurface->GetPolish() << G4endl;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void DetectorConstruction::AddTankMPV(const G4String& prop,
-                                      G4MaterialPropertyVector* mpv)
-{
-  fTankMPT->AddProperty(prop, mpv);
-  G4cout << "The MPT for the box is now: " << G4endl;
-  fTankMPT->DumpTable();
-  G4cout << "............." << G4endl;
+    G4RunManager::GetRunManager()->DefineWorldVolume(Construct());
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -557,25 +502,6 @@ void DetectorConstruction::AddWorldMPV(const G4String& prop,
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void DetectorConstruction::AddSurfaceMPV(const G4String& prop,
-                                         G4MaterialPropertyVector* mpv)
-{
-  fSurfaceMPT->AddProperty(prop, mpv);
-  G4cout << "The MPT for the surface is now: " << G4endl;
-  fSurfaceMPT->DumpTable();
-  G4cout << "............." << G4endl;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void DetectorConstruction::AddTankMPC(const G4String& prop, G4double v)
-{
-  fTankMPT->AddConstProperty(prop, v);
-  G4cout << "The MPT for the box is now: " << G4endl;
-  fTankMPT->DumpTable();
-  G4cout << "............." << G4endl;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 void DetectorConstruction::AddWorldMPC(const G4String& prop, G4double v)
 {
   fWorldMPT->AddConstProperty(prop, v);
@@ -583,15 +509,6 @@ void DetectorConstruction::AddWorldMPC(const G4String& prop, G4double v)
   fWorldMPT->DumpTable();
   G4cout << "............." << G4endl;
 }
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void DetectorConstruction::AddSurfaceMPC(const G4String& prop, G4double v)
-{
-  fSurfaceMPT->AddConstProperty(prop, v);
-  G4cout << "The MPT for the surface is now: " << G4endl;
-  fSurfaceMPT->DumpTable();
-  G4cout << "............." << G4endl;
-}
-
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 void DetectorConstruction::SetWorldMaterial(const G4String& mat)
 {
@@ -610,33 +527,72 @@ void DetectorConstruction::SetWorldMaterial(const G4String& mat)
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void DetectorConstruction::SetTankMaterial(const G4String& mat)
+void DetectorConstruction::BuildBeamline()
 {
-  G4Material* pmat = G4NistManager::Instance()->FindOrBuildMaterial(mat);
-  if(pmat && fTankMaterial != pmat)
-  {
-    fTankMaterial = pmat;
-    if(fTank_LV)
-    {
-      fTank_LV->SetMaterial(fTankMaterial);
-      fTankMaterial->SetMaterialPropertiesTable(fTankMPT);
-      fTankMaterial->GetIonisation()->SetBirksConstant(0.126 * mm / MeV);
-    }
-    G4RunManager::GetRunManager()->PhysicsHasBeenModified();
-    G4cout << "Tank material set to " << fTankMaterial->GetName() << G4endl;
-  }
+    G4Material* VacuumMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
+    G4Material* ChamberMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
+    G4Material* WindowMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
+    G4Material* TargetMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_lH2");
+    G4Material* TargetCellMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
+    G4Material* BeampipeMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
 }
 
-void DetectorConstruction::SetBendRadius(G4double radius)
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void DetectorConstruction::BuildTarget()
 {
-  bend_rad = radius*cm;
-  G4RunManager::GetRunManager()->PhysicsHasBeenModified();
-  world_PV = DetectorConstruction::Construct();
-}
+    G4Material* VacuumMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
+    G4Material* TargetMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_lH2");
+    G4Material* TargetCellMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
 
-void DetectorConstruction::SetBendAngle(G4double angle)
-{
-  bend_ang = angle*deg;
-  G4RunManager::GetRunManager()->PhysicsHasBeenModified();
-  world_PV = DetectorConstruction::Construct();
+    const G4double inch = 2.54*cm;
+
+    G4double ChamberInnerRadius = 20.5*inch;
+    G4double ChamberHeight = 3*24.25*2*inch;
+
+    G4double BeamlineInnerRadius = 200. *mm;
+    G4double BeamlineHeight = 1300. *cm;
+
+    G4double TargetLength = fTarLength;
+    G4double TargetRadius = 0.5*50.*mm;
+    G4double TargetCellLength = (0.125 + 150.)*mm;
+    G4double TargetCellRadius = (0.125 + 0.5*50.)*mm;
+    G4double TargetWindowThickness = 0.125*mm;
+
+    //---------------------------------------------------------------------------
+    // Vacuum inside scattering chamber and exit beamline
+    //---------------------------------------------------------------------------
+
+    G4RotationMatrix *xChambRot = new G4RotationMatrix;
+    xChambRot->rotateX(90*degree);
+
+    G4Tubs* sChamberInner = new G4Tubs("ChamberInner_sol", 0., ChamberInnerRadius, 0.5*ChamberHeight, 0., twopi);
+    G4Tubs* sBeamlineInner = new G4Tubs("BeamlineInner_sol", 0., BeamlineInnerRadius, BeamlineHeight, 0., twopi);
+    
+    G4UnionSolid* vacUnion = new G4UnionSolid("vacUnion", sChamberInner, sBeamlineInner, xChambRot, G4ThreeVector(0., -BeamlineHeight, 0.));
+    G4LogicalVolume* LogicInnerChamber = new G4LogicalVolume(vacUnion, VacuumMaterial, "ChamberInner_LV")
+
+    new G4PVPlacement(xChambRot, G4ThreeVector(), LogicInnerChamber, "ChamberInner_pos", fWorld_LV, false, 0);
+
+    LogicInnerChamber->SetVisAttributes(G4VisAttributes::Invisible);
+
+    //---------------------------------------------------------------------------
+    // Target Cell & Target
+    //---------------------------------------------------------------------------
+
+    G4RotationMatrix *xTargetRot = new G4RotationMatrix;
+    xTargetRot->rotateX(-90*degree);
+
+    G4Tubs* sTargetCell = new G4Tubs("TargetCell_sol", 0., TargetCellRadius, (0.5*TargetLength)+TargetWindowThickness, 0., twopi);
+
+    G4LogicalVolume* LogicTargetCell = new G4LogicalVolume(sTargetCell, TargetCellMaterial, "TargetCell_LV");
+
+    new G4PVPlacement(xTargetRot, G4ThreeVector(), LogicTargetCell, "TargetCell_pos", LogicInnerChamber, false, 0);
+
+    //---------------------------------------------------------------------------
+
+    G4Tubs* sTarget = new G4Tubs("Target_sol", 0., TargetRadius, 0.5*TargetLength, 0., twopi);
+
+    fLogicTarget = new G4LogicalVolume(sTarget, TargetMaterial, "Target_LV");
+
+    new G4PVPlacement(0, G4ThreeVector(0., 0., 0.5*TargetWindowThickness), fLogicTarget, "Target_pos", LogicTargetCell, false, 0);
 }
