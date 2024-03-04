@@ -535,6 +535,151 @@ void DetectorConstruction::BuildBeamline()
     G4Material* TargetMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_lH2");
     G4Material* TargetCellMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
     G4Material* BeampipeMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
+
+    const G4double inch = 2.54*cm;
+
+    G4double ChamberOuterRadius = 22.5*inch;
+    G4double ChamberInnerRadius = 20.5*inch;
+
+    G4double ChamberHeight = 24.25*2*inch;
+    G4double WindowHeight = 19*inch;
+    G4double WindowSubHeight = 15*inch;
+    G4double WindowFrameHeight = 20*inch;
+    G4double WindowClampHeight = 20*inch;
+
+    G4double WindowFrameThickness = 1.25*inch;
+    G4double WindowClampThickness = 0.750*inch;
+    G4double WindowThickness = fSCWinThick;
+
+    G4double TargetLength = fTarLength;
+    G4double TargetRadius = 0.5*50.*mm;
+    G4double TargetCellLength = (0.125 + 150.)*mm;
+    G4double TargetCellRadius = (0.125 + 0.5*50.)*mm;
+    G4double TargetWindowThickness = 0.125*mm;
+
+    G4double WindowInnerJoint1OuterRadius = 0.5*1.469*inch;
+    G4double WindowInnerJoint1Thickness = 0.5*inch;
+    G4double WindowInnerJoint2InnerRadius = 0.5*1.068*inch;
+    G4double WindowInnerJoint2OuterRadius = 0.5*1.50*inch;
+    G4double WindowInnerJoint2Thickness  = 0.109*inch;
+
+    G4double WindowOuterJoint2InnerRadius = 0.5*0.68*inch;
+    G4double WindowOuterJoint2OuterRadius = 0.5*1.062*inch;
+    G4double WindowOuterJoint2Thickness = (0.62 + 1.562 - 0.137 - 0.06)*inch;
+    G4double WindowOuterJoint2_1InnerRadius = WindowOuterJoint2OuterRadius;
+    G4double WindowOuterJoint2_1OuterRadius = 0.5*1.5*inch;
+    G4double WindowOuterJoint2_1Thickness = 0.19*inch;
+    G4double WindowOuterJoint2_1Position = 0.62*inch;
+
+    G4double WindowOuterJoint2_2dx = 1.12*inch;
+    G4double WindowOuterJoint2_2dy = 1.12*inch ;
+    G4double WindowOuterJoint2_2dz = 0.137*inch;
+    G4double WindowOuterJoint2_3InnerRadius = 0.5*0.68*inch;
+    G4double WindowOuterJoint2_3OuterRadius = 0.5*0.738*inch;
+    G4double WindowOuterJoint2_3Thickness = 0.06*inch;
+
+    G4double Beampipe1Innerdx1 = 18.915*mm;
+    G4double Beampipe1Innerdx2 = 63.4*mm;
+    G4double Beampipe1Innerdy1 = Beampipe1Innerdx1;
+    G4double Beampipe1Innerdy2 = Beampipe1Innerdx2;
+    G4double Beampipe1Outerdx1 = 25.265*mm;
+    G4double Beampipe1Outerdx2 = 69.749*mm;
+    G4double Beampipe1Outerdy1 = Beampipe1Outerdx1;
+    G4double Beampipe1Outerdy2 = Beampipe1Outerdx2;
+    G4double Beampipe1Length = 1685.925*mm;
+    G4double Beampipe2OuterRadius = 0.5*168.275*mm;
+    G4double Beampipe2InnerRadius = 0.5*154.051*mm;
+    G4double Beampipe2Length = 129.633*inch;
+
+    G4double Beampipe2FrontCellThickness = Beampipe2OuterRadius -Beampipe2InnerRadius;
+    G4double Beampipe3OuterRadius = 0.5*273.05*mm;
+    G4double Beampipe3InnerRadius = 0.5*254.508*mm;
+    G4double Beampipe3Length = 5102.225*mm;
+    G4double Beampipe3FrontCellThickness = Beampipe3OuterRadius -Beampipe3InnerRadius;
+
+    //---------------------------------------------------------------------------
+    //Scattering Chamber
+    //---------------------------------------------------------------------------
+
+    G4RotationMatrix *xChambRot = new G4RotationMatrix;  
+    xChambRot->rotateX(90*degree);                     
+  
+    G4Tubs* sChamberOuter = new G4Tubs("ChamberOuter_sol", ChamberInnerRadius, ChamberOuterRadius, 0.5*ChamberHeight, 0., twopi);
+
+    G4double WindowStartTheta = (3.+10.+90.+180.)*pi/180.;
+    G4double WindowDeltaTheta = 124.*pi/180.;
+    G4double WindowFrameStartTheta = WindowStartTheta-(4.5)*pi/180.;
+    G4double WindowFrameDeltaTheta = WindowDeltaTheta+9*pi/180.;
+
+    G4Tubs* sWindowSub = new G4Tubs("WindowSub_sol", ChamberInnerRadius-1*cm, ChamberOuterRadius+1*cm, 0.5*WindowSubHeight, WindowStartTheta, WindowDeltaTheta);
+  
+    G4RotationMatrix *zWindowRot = new G4RotationMatrix;  
+    zWindowRot->rotateZ(90*degree);                     
+    G4SubtractionSolid* sChamber_sub_Window = new G4SubtractionSolid("Chamber_sub_Window", sChamberOuter, sWindowSub, zWindowRot, G4ThreeVector());
+
+    G4LogicalVolume* LogicChamber = new G4LogicalVolume(sChamber_sub_Window, ChamberMaterial, "ChamberOuter_log");
+
+    new G4PVPlacement(xChambRot, G4ThreeVector(), LogicChamber, "ChamberOuter_pos", fWorld_LV, false, 0);
+
+    //---------------------------------------------------------------------------
+  
+    G4Tubs* sWindowFrame_before_sub = new G4Tubs("WindowFrame_before_sub_sol", ChamberOuterRadius, ChamberOuterRadius + WindowFrameThickness, 0.5*WindowFrameHeight, WindowFrameStartTheta, WindowFrameDeltaTheta);
+
+    G4Tubs* sWindowFrame_sub = new G4Tubs("WindowFrame_sub_sol", ChamberOuterRadius - 1*cm, ChamberOuterRadius + WindowFrameThickness + 1*cm, 0.5*WindowSubHeight, WindowStartTheta, WindowDeltaTheta);
+  
+    G4RotationMatrix *pseudoWindowRot = new G4RotationMatrix;  
+    pseudoWindowRot->rotateZ(0*degree);                     
+  
+    G4SubtractionSolid* sWindowFrame = new G4SubtractionSolid("WindowFrame_sol", sWindowFrame_before_sub, sWindowFrame_sub, pseudoWindowRot, G4ThreeVector());
+
+    G4LogicalVolume* LogicWindowFrame = new G4LogicalVolume(sWindowFrame, ChamberMaterial, "WindowFrame_log");
+
+    G4RotationMatrix *zxWindowRot = new G4RotationMatrix(0,-90*degree,-90*degree);
+
+    new G4PVPlacement(zxWindowRot, G4ThreeVector(), LogicWindowFrame, "WindowFrame_pos", fWorld_LV, false, 0);
+
+    //---------------------------------------------------------------------------
+
+    G4Tubs* sWindowClamp_before_sub = new G4Tubs("WindowClamp_before_sub_sol", ChamberOuterRadius + WindowFrameThickness + WindowThickness, ChamberOuterRadius + WindowFrameThickness + WindowThickness + WindowClampThickness, 0.5*WindowClampHeight, WindowFrameStartTheta, WindowFrameDeltaTheta);
+  
+    G4Tubs* sWindowClamp_sub = new G4Tubs("WindowClamp_sub_sol", ChamberOuterRadius + WindowFrameThickness + WindowThickness -1*cm, ChamberOuterRadius + WindowFrameThickness + WindowThickness + WindowClampThickness +1*cm, 0.5*WindowSubHeight, WindowStartTheta, WindowDeltaTheta);
+
+    G4SubtractionSolid* sWindowClamp = new G4SubtractionSolid("WindowClamp_sol", sWindowClamp_before_sub, sWindowClamp_sub, pseudoWindowRot, G4ThreeVector());
+  
+    G4LogicalVolume* LogicWindowClamp = new G4LogicalVolume(sWindowClamp, ChamberMaterial, "WindowClamp_log");
+
+    new G4PVPlacement(zxWindowRot, G4ThreeVector(), LogicWindowClamp, "WindowClamp_pos", fWorld_LV, false, 0);
+
+    //---------------------------------------------------------------------------
+    // Vacuum inside the chamber
+    //---------------------------------------------------------------------------
+
+    G4Tubs* sChamberInner = new G4Tubs("ChamberInner_sol", 0., ChamberInnerRadius, 0.5*ChamberHeight, 0., twopi);
+
+    G4LogicalVolume* LogicInnerChamber = new G4LogicalVolume(sChamberInner, VacuumMaterial, "ChamberInner_log");
+
+    new G4PVPlacement(xChambRot, G4ThreeVector(), LogicInnerChamber, "ChamberInner_pos", fWorld_LV, false, 0);
+
+    //---------------------------------------------------------------------------
+    // Target Cell & Target
+    //---------------------------------------------------------------------------
+
+    G4RotationMatrix *xTargetRot = new G4RotationMatrix;  
+    xTargetRot->rotateX(-90*degree);                     
+
+    G4Tubs* sTargetCell = new G4Tubs("TargetCell_sol", 0., TargetCellRadius, (0.5*TargetLength)+TargetWindowThickness, 0.,twopi); 
+
+    G4LogicalVolume* LogicTargetCell = new G4LogicalVolume(sTargetCell, TargetCellMaterial, "TargetCell_log");   
+
+    new G4PVPlacement(xTargetRot, G4ThreeVector(0., -43.9*cm, 0.), LogicTargetCell, "TargetCell_pos",  LogicInnerChamber, false, 0);
+
+    //---------------------------------------------------------------------------
+
+    G4Tubs* sTarget = new G4Tubs("Target_sol", 0., TargetRadius, 0.5*TargetLength, 0.,twopi); 
+
+    fLogicTarget = new G4LogicalVolume(sTarget, TargetMaterial, "Target_log");  
+  
+    new G4PVPlacement(0, G4ThreeVector(0., 0., 0.5*TargetWindowThickness), fLogicTarget, "Target_pos", LogicTargetCell, false, 0 ); 
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
