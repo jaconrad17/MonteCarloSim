@@ -58,13 +58,38 @@ public:
     G4VPhysicalVolume* Construct();
     
     void UpdateGeometry();
-    void BuildOpticalBeamLine();
-    void BuildOpticalTarget();
+    void BuildBeamLine();
+    void BuildTarget();
     
     inline G4VPhysicalVolume* GetWorldPV() { return world_PV; };
     inline G4VPhysicalVolume* GetDetVol(G4int i) { return fDetVol[i]; };
     inline VirtualDetectorSD* GetVirtualDetectorSD() { return fVirtualDetectorSD; };
     inline G4int GetNoSD() { return fNSD; };
+
+    G4OpticalSurface* GetSurface(void) { return fSurface; }
+    void SetSurfaceFinish(const G4OpticalSurfaceFinish finish)
+    {
+        fSurface->SetFinish(finish);
+            G4RunManager::GetRunManager()->GeometryHasBeenModified();
+    }
+    G4OpticalSurfaceFinish GetSurfaceFinish(void)
+    {
+        return fSurface->GetFinish();
+    }
+    void SetSurfaceType(const G4SurfaceType type)
+    {
+        fSurface->SetType(type);
+        G4RunManager::GetRunManager()->GeometryHasBeenModified();
+    }
+    void SetSurfaceModel(const G4OpticalSurfaceModel model)
+    {
+        fSurface->SetModel(model);
+        G4RunManager::SetRunManager()->GeometryHasBeenModified();
+    }
+    G4OpticalSurfaceModel GetSurfaceModel(void) {return fSurface->GetModel(); }
+
+    void SetSurfaceSigmaAlpha(G4double v);
+    void SetSurfacePolish(G4double v);
     
     void SetNPSAngle(G4double a) {fNPSAngle = a;  }
     void SetNPSDistance(G4double d) {fNPSDist = d;  }
@@ -84,9 +109,15 @@ public:
     {
         return fWorldMPT;
     }
+    G4MaterialPropertiesTable* GetSurfaceMaterialPropertiesTable()
+    {
+        return fSurfaceMPT;
+    }
 
-  void SetWorldMaterial(const G4String&);
-  G4Material* GetWorldMaterial() const { return fWorldMaterial; }
+    void SetWorldMaterial(const G4String&);
+    G4Material* GetWorldMaterial() const { return fWorldMaterial; }
+
+    virtual G4VPhysicalVolume* Construct();
 
 private:
     G4NistManager* fNistManager;
@@ -117,13 +148,31 @@ private:
     
     static const G4int fNSD = ( fNPSNrow*fNPSNcol + fHodoNrow*fHodoNcol + fHCALNrow*HCALNcol + 1);
 
-    G4VPhysicalVolume* world_PV;
+    G4VPhysicalVolume* fWorld_PV;
     G4VPhysicalVolume* fDetVol[fNSD];
     G4LogicalVolume* fWorld_LV;
     G4LogicalVolume* fLogicTarget;
 
     G4Material* fWorldMaterial;
+    G4Material* fPbWO4Material;
+    G4Material* fNPSshieldMaterial;
+    G4Material* fHCALscintMaterial;
+    G4Material* ‎fHCALeabsMaterial;
+    G4Material* fHodoscintMaterial;
+    G4Material* fHCALshieldMaterial;
+
+    G4OpticalSurface* fSurface;
+    G4OpticalSurface* fSurface2;
+
+    DetectorMessenger* fDetMessenger;
+
     G4MaterialPropertiesTable* fWorldMPT;
+    G4MaterialPropertiesTable* fPbWO4MPT;
+    G4MaterialPropertiesTable* fNPSshieldMPT;
+    G4MaterialPropertiesTable* fHCALscintMPT;
+    G4MaterialPropertiesTable* fHCALeabsMPT;
+    G4MaterialPropertiesTable* fHodoscintMPT;
+    G4MaterialPropertiesTable* fHCALshieldMPT;
     
     VirtualDetectorSD* fVirtualDetectorSD;
     RealDetectorSD* fRealDetectorSD;
