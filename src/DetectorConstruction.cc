@@ -196,7 +196,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4LogicalVolumeStore::GetInstance()->Clean();
     G4SolidStore::GetInstance()->Clean();
 
-    fPbWO4_material->SetMaterialPropertiesTable(fPbWO4MPT);
+    fPbWO4Material->SetMaterialPropertiesTable(fPbWO4MPT);
     fNPSshieldMaterial->SetMaterialPropertiesTable(fNPSshieldMPT);
     fHCALscintMaterial->SetMaterialPropertiesTable(fHCALscintMPT);
     fHCALeabsMaterial->SetMaterialPropertiesTable(fHCALeabsMPT);
