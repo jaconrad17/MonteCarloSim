@@ -54,11 +54,26 @@
 #include "G4PVPlacement.hh"
 #include "G4SystemOfUnits.hh"
 
+#include "G4VisAttributes.hh"
+#include "G4String.hh"
+#include "globals.hh"
+
+#include <fstream>
+
+using namespace CLHEP;
+using namespace std;
+
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-DetectorConstruction::DetectorConstruction() : G4VUserDetectorConstruction(), fDetectorMessenger(nullptr)
+DetectorConstruction::DetectorConstruction()
 {
-    // Dimensions
+    // Initialize NistManager
+    fNistManager = G4NistManager::Instance();
+
+    // Initialize DetectorMessenger
+    fDetMessenger = new DetectorMessenger(this);
+    
+    // Dimensions of Experiment
     fExpHall_x = fExpHall_y = fExpHall_z = 10.75 *m;
     fNPSAngle                            = 15.5 *deg;
     fNPSDist                             = 301.0 *cm;
@@ -71,116 +86,120 @@ DetectorConstruction::DetectorConstruction() : G4VUserDetectorConstruction(), fD
     fBeamline                            = 0;
 
     // MaterialPropertiesTable Initialization
-    fWorldMPT      = new G4MaterialPropertiesTable(); // World
-    fPbWO4MPT      = new G4MaterialPropertiesTable(); // NPS Electron Arm
-    fNPSshieldMPT  = new G4MaterialPropertiesTable(); // Electron Arm Shields
-    fHCALscintMPT  = new G4MaterialPropertiesTable(); // HCAL Proton Arm
-    fHCALeabsMPT   = new G4MaterialPropertiesTable(); // HCAL Proton Arm Shields
-    fHodoscintMPT  = new G4MaterialPropertiesTable(); // Hadron Arm Hodoscope
-    fHCALshieldMPT = new G4MaterialPropertiesTable(); // Hadron Arm Shield
-    
-
-    
-  fTank_x = fTank_y = fTank_z = 1.0 * cm;
-
-  fTank = nullptr;
-
-  fTankMPT    = new G4MaterialPropertiesTable();
-  fScintMPT = new G4MaterialPropertiesTable();
-  
-  fSurfaceMPT = new G4MaterialPropertiesTable();
-  fSurfaceMPT2 = new G4MaterialPropertiesTable();
-
-  fSurface2 = new G4OpticalSurface("Surface2");
-  fSurface2->SetType(dielectric_dielectric);
-  fSurface2->SetFinish(polished);
-  fSurface2->SetModel(unified);
-
-  fSurface = new G4OpticalSurface("Surface");
-  fSurface->SetType(dielectric_dielectric);
-  fSurface->SetFinish(polished);
-  fSurface->SetModel(unified);
-
-  const G4int NUM = 6;
-  G4double pp[NUM] = {2.0*eV, 2.2*eV, 2.4*eV, 2.6*eV, 2.8*eV, 3.0*eV};
-  G4double rindex[NUM] = {1.5, 1.5, 1.5, 1.5, 1.5, 1.5};
-  G4double rindex2[NUM] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-  G4double rindex3[NUM] = {1.52, 1.52, 1.52, 1.52, 1.52, 1.52};
-  G4double reflectivity[NUM] = {0.3, 0.3, 0.3, 0.3, 0.3, 0.3};
-
-  G4double reflectivity2[NUM] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-  G4double tran2[NUM] = {0., 0., 0., 0., 0., 0.};
-
-  G4double tran[NUM] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7};
-  G4double absorption[NUM] = {3.448*m, 4.082 * m,  6.329 * m,  9.174 * m,  12.346 * m, 13.889 * m};
-  fTankMPT->AddProperty("RINDEX", pp, rindex3, NUM);      // was rindex not rindex3
-  //fTankMPT->AddProperty("ABSLENGTH", pp, absorption, NUM);
-  //fSurfaceMPT->AddProperty("REFLECTIVITY",pp,reflectivity,NUM);
-  //fSurfaceMPT->AddProperty("TRANSMITTANCE",pp,tran,NUM);
-
-  fSurfaceMPT2->AddProperty("REFLECTIVITY", pp, reflectivity2, NUM);
-  fSurfaceMPT2->AddProperty("TRANSMITTANCE", pp, tran2, NUM);
-
-  fWorldMPT->AddProperty("RINDEX", pp, rindex2, NUM);
-  fScintMPT->AddProperty("RINDEX", pp, rindex3, NUM);
-
-
-  fSurface2->SetMaterialPropertiesTable(fSurfaceMPT2);
-
-  fSurface->SetMaterialPropertiesTable(fSurfaceMPT);
-
-  fTank_LV  = nullptr;
-  fWorld_LV = nullptr;
-  rect_mid_LV = nullptr;
-  cone_LV = nullptr;
-  rem_cyl_LV = nullptr;
-  rem_cyl2_LV = nullptr;
-  rem_cyl3_LV = nullptr;
-  rem_cyl4_LV = nullptr;
-  rec_box_LV = nullptr;
+    fWorldMPT       = new G4MaterialPropertiesTable(); // World
+    fPbWO4MPT       = new G4MaterialPropertiesTable(); // NPS Electron Arm
+    fNPSshieldMPT   = new G4MaterialPropertiesTable(); // Electron Arm Shields
+    fHCALscintMPT   = new G4MaterialPropertiesTable(); // HCAL Proton Arm
+    fHCALeabsMPT    = new G4MaterialPropertiesTable(); // HCAL Proton Arm Shields
+    fHodoscintMPT   = new G4MaterialPropertiesTable(); // Hadron Arm Hodoscope
+    fSurfaceMPT     = new G4MaterialPropertiesTable(); // Hodoscope Surface
+    fHCALshieldMPT  = new G4MaterialPropertiesTable(); // Hadron Arm Shield
 
     // Initialize Logical Volumes
-    fWorld_LV = nullptr; // World
-    fPbWO4_LV = nullptr; // NPS Electron Arm
-    fNPSshield_LV = nullptr; // Electron Arm Shields
-    fHCALscint_LV = nullptr; // HCAL Proton Arm
-    fHCALeabs_LV = nullptr; // HCAL Proton Arm Shield
-    fHodoscint_LV = nullptr; // Hadron Arm Hodoscope
+    fWorld_LV      = nullptr; // World
+    fPbWO4_LV      = nullptr; // NPS Electron Arm
+    fNPSshield_LV  = nullptr; // Electron Arm Shields
+    fHCALscint_LV  = nullptr; // HCAL Proton Arm
+    fHCALeabs_LV   = nullptr; // HCAL Proton Arm Shield
+    fHodoscint_LV  = nullptr; // Hadron Arm Hodoscope
     fHCALshield_LV = nullptr; // Hadron Arm Shield
-
-  bend_ang = 1*rad;
-  bend_rad = 24.75*cm;
-  
-
-    
-    
-  fTankMaterial  = G4NistManager::Instance()->FindOrBuildMaterial("G4_GLASS_PLATE");
-  
-  fScintMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Pyrex_Glass");
-
 
     // Set Materials
     fWorldMaterial      = G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR"); // World
     fPbWO4Material      = G4NistManager::Instance()->FindOrBuildMaterial("G4_PbWO4"); // NPS Electron Arm
     fNPSshieldMaterial  = G4NistManager::Instance()->FindOrBuildMaterial("G4_Pb"); // Electron Arm Shields
-    fHCALscintMaterial  = G4NistManager::Instance()->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"); // HCAL Proton Arm
+    fHCALscintMaterial  = G4NistManager::Instance()->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"); // HCAL Proton Arm (PMT)
     fHCALeabsMaterial   = G4NistManager::Instance()->FindOrBuildMaterial("G4_Fe"); // HCAL Proton Arm Shield
-    fHodoscintMaterial  = G4NistManager::Instance()->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"); // Hadron Arm Hodoscope
+    fHodoscintMaterial  = G4NistManager::Instance()->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"); // Hadron Arm Hodoscope (PMT)
     fHCALshieldMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Pb"); // Hadron Arm Shield
+
+    // ------------- Optical Properties of Materials --------------
+    // Optical Surface
+    fSurface = new G4OpticalSurface("HodoSurface");
+    fSurface->SetType(dielectric_dielectric);
+    fSurface->SetFinish(polished);
+    fSurface->SetModel(unified);
     
-    // Initialize DetectorMessenger
-    fDetMessenger = new DetectorMessenger(this);
+    // Optical Photon Energy and Entry Number
+    const G4int NUM = 6;
+    G4double pp[NUM] = {2.0*eV, 2.2*eV, 2.4*eV, 2.6*eV, 2.8*eV, 3.0*eV};
+
+    // Refractive Index of Materials
+    G4double rindex1[NUM] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0}; // Refractive Index of World (Air)
+    G4double rindex2[NUM] = {2.16, 2.16, 2.16, 2.16, 2.16, 2.16}; // Refractive Index of NPS Electron Arm (PbWO4)
+    G4double rindex3[NUM] = {}; // Refractive Index of Lead for Electron Arm Shields, HCAL Proton Arm Shields, and Hadron Arm Shield
+    G4double rindex4[NUM] = {1.473, 1.473, 1.473, 1.473, 1.473, 1.473}; // Refractive Index of Vinyltoluene for HCAL Proton Arm and Hadron Arm Hodoscope
+
+    // Absorption of Materials
+    G4double absorption1[NUM] = {}; // Absorption Index of World (Air)
+    G4double absorption2[NUM] = {}; // Absorption Index of NPS Electron Arm (PbWO4)
+    G4double absorption3[NUM] = {}; // Absorption Index of Lead for Electron Arm Shields, HCAL Proton Arm Shields, and Hadron Arm Shield
+    G4double absorption4[NUM] = {}; // Absorption Index of Vinyltoluene (PMT) for HCAL Proton Arm and Hadron Arm Hodoscope
+
+    // Scintillation Fast Component Properties
+    G4double fPbWO4_ScintFast[NUM]     = {}; // Scintillation Fast Component of NPS Electron Arm (PbWO4)
+    G4double fHCALscint_ScintFast[NUM] = {}; // Scintillation Fast Component of HCAL Proton Arm (Vinyltoluene)
+    G4double fHodoscint_ScintFast[NUM] = {}; // Scintillation Fast Component of Hadron Arm Hodoscope (Vinyltoluene)
+
+    // Hodosurface Reflectivity and Transmittance Properties (Borosilicate Glass)
+    G4double HodoSurf_Reflect[NUM] = {};
+    G4double HodoSurf_Trans[NUM] = {};
+
+    // Applying Refractive Indexes to MPT list
+    fWorldMPT->AddProperty("RINDEX", pp, rindex1, NUM);
+    fPbWO4MPT->AddProperty("RINDEX", pp, rindex2, NUM);
+    fNPSshieldMPT->AddProperty("RINDEX", pp, rindex3, NUM);
+    fHCALscintMPT->AddProperty("RINDEX", pp, rindex4, NUM);
+    fHCALeabsMPT->AddProperty("RINDEX", pp, rindex3, NUM);
+    fHodoscintMPT->AddProperty("RINDEX", pp, rindex4, NUM);
+    fHCALshieldMPT->AddProperty("RINDEX", pp, rindex3, NUM);
+
+    // Applying Absorption Indexes to MPT list
+    fWorldMPT->AddProperty("RINDEX", pp, absorption1, NUM);
+    fPbWO4MPT->AddProperty("RINDEX", pp, absorption2, NUM);
+    fNPSshieldMPT->AddProperty("RINDEX", pp, absorption3, NUM);
+    fHCALscintMPT->AddProperty("RINDEX", pp, absorption4, NUM);
+    fHCALeabsMPT->AddProperty("RINDEX", pp, absorption3, NUM);
+    fHodoscintMPT->AddProperty("RINDEX", pp, absorption4, NUM);
+    fHCALshieldMPT->AddProperty("RINDEX", pp, absorption3, NUM);
+
+    // Setting Optical Surface Absorption and Transmittance
+    fSurfaceMPT->AddProperty("REFLECTIVITY", pp, HodoSurf_Reflect, NUM);
+    fSurfaceMPT->AddProperty("TRANSMITTANCE", pp, HodoSurf_Trans, NUM);
+    fSurface->SetMaterialPropertiesTable(fHodoSurfMPT);
+
+    // Setting Scintillation Properties of Scintillators
+    // NPS Electron Arm
+    fPbWO4MPT->AddProperty("FASTCOMPONENT", pp, fPbWO4_ScintFast, NUM);
+    fPbWO4MPT->AddConstProperty("SCINTILLATIONYIELD", 150./MeV);
+    fPbWO4MPT->AddConstProperty("RESOLUTIONSCALE", 1.0);
+    fPbWO4MPT->AddConstProperty("FASTTIMECONSTANT", 5.0*ns);
+    fPbWO4MPT->AddConstProperty("SLOWTIMECONSTANT", 15.0*ns);
+
+    // HCAL Proton Arm
+    fHCALscintMPT->AddProperty("FASTCOMPONENT", pp, fHCALscint_ScintFast, NUM);
+    fHCALscintMPT->AddConstProperty("SCINTILLATIONYIELD", 7100./MeV);
+    fHCALscintMPT->AddConstProperty("RESOLUTIONSCALE", 1.0);
+    fHCALscintMPT->AddConstProperty("FASTTIMECONSTANT", 7.0*ns);
+
+    // Hadron Arm Hodoscope
+    fHodoscintMPT->AddProperty("FASTCOMPONENT", pp, fHodoscint_ScintFast, NUM);
+    fHodoscintMPT->AddConstProperty("SCINTILLATIONYIELD", 7100./MeV);
+    fHodoscintMPT->AddConstProperty("RESOLUTIONSCALE", 1.0);
+    fHodoscintMPT->AddConstProperty("FASTTIMECONSTANT", 7.0*ns);    
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 DetectorConstruction::~DetectorConstruction() 
 {
+    // Eliminate Allocated Data
     delete fPbWO4MPT;
     delete fNPSshieldMPT;
     delete fHCALscintMPT;
     delete fHCALeabsMPT;
     delete fHodoscintMPT;
+    delete fHodoSurfMPT;
     delete fHCALshieldMPT;
     delete fWorldMPT;
     delete fDetMessenger;
@@ -196,12 +215,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4LogicalVolumeStore::GetInstance()->Clean();
     G4SolidStore::GetInstance()->Clean();
 
+    // Adjust Material Property Tables
+    fWorldMaterial->SetMaterialPropertiesTable(fWorldMPT);
     fPbWO4Material->SetMaterialPropertiesTable(fPbWO4MPT);
     fNPSshieldMaterial->SetMaterialPropertiesTable(fNPSshieldMPT);
     fHCALscintMaterial->SetMaterialPropertiesTable(fHCALscintMPT);
     fHCALeabsMaterial->SetMaterialPropertiesTable(fHCALeabsMPT);
     fHodoscintMaterial->SetMaterialPropertiesTable(fHodoscintMPT);
     fHCALshieldMaterial->SetMaterialPropertiesTable(fHCALshieldMPT);
+
+    // Accounts for Birks effect in hits
+    fPbWO4Material->GetIonisation()->GetBirksConstant();
+    fHCALscintMaterial->GetIonisation()->GetBirksConstant();
+    fHodoscintMaterial->GetIonisation()->GetBirksConstant();
 
     // ------------- Volumes --------------
     // The experimental Hall
@@ -239,13 +265,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     //--------------------------------------------------------------------------- 
     // Create "NPS" electron arm
     //--------------------------------------------------------------------------- 
-  
-    G4double fPbWO4_X = 20.*mm; 
-    G4double fPbWO4_Y = 20.*mm; 
-    G4double fPbWO4_Z = 200.*mm;
+
+    // Dimensions of NPS electron arm
+    fPbWO4_X = fPbWO4_Y = 20.*mm; 
+    fPbWO4_Z = 200.*mm;
 
     G4Box* fPbWO4_solid = new G4Box("fPbWO4_solid", 0.5*fPbWO4_X, 0.5*fPbWO4_Y, 0.5*fPbWO4_Z);
-    G4LogicalVolume* fPbWO4_LV = new G4LogicalVolume(fPbWO4_solid, fPbWO4Material, "fPbWO4_LV");
+    G4LogicalVolume* fPbWO4_LV = new G4LogicalVolume(fPbWO4_solid, fPbWO4Material, "fPbWO4_log");
 
     G4double NPS_x, NPS_z, NPS_th, NPS_ph;
     G4double NPS_xprime, NPS_yprime, NPS_zprime;
@@ -283,13 +309,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     // Create electron arm shields
     //---------------------------------------------------------------------------
 
-    G4double fNPSshield_X = fPbWO4_X;
-    G4double fNPSshield_Y = ((fNPSNrow) * fPbWO4_Y) + 5. *mm;
-    G4double fNPSshield_Z = fNPSShieldThick;
+    // Dimensions of Electron Arm Shields
+    fNPSshield_X = fPbWO4_X;
+    fNPSshield_Y = ((fNPSNrow) * fPbWO4_Y) + 5. *mm;
+    fNPSshield_Z = fNPSShieldThick;
 
     G4Box* fNPSshield_solid = new G4Box("NPSshield_solid", 0.5*fNPSshield_X, 0.5*fNPSshield_Y, 0.5*fNPSshield_Z);
 
-    G4LogicalVolume* fNPSshield_LV = new G4LogicalVolume(fNPSshield_solid, fNPSshieldMaterial, "NPSshield_LV");
+    G4LogicalVolume* fNPSshield_LV = new G4LogicalVolume(fNPSshield_solid, fNPSshieldMaterial, "NPSshield_log");
 
     G4double NPSshield_x, NPSshield_y, NPSshield_th, NPSshield_ph;
     G4double NPSshield_xprime, NPSshield_yprime, NPSshield_zprime;
@@ -320,18 +347,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     // Create "HCAL" proton arm
     //--------------------------------------------------------------------------- 
 
-    // 44 pairs of 10mm scint + 13mm Fe = 1012 mm
-    G4int fHCALNpairs = 44;
-    G4double fHCALeabs_Z = 13.0*mm;
-    G4double fHCALscint_X = 150.0*mm;
-    G4double fHCALscint_Y = 150.0*mm;
-    G4double fHCALscint_Z = 1012.0*mm;
+    // Dimensions of HCAL proton arm
+    fHCALNpairs = 44; // 44 pairs of 10mm scint + 13mm Fe = 1012 mm
+    fHCALeabs_Z = 13.0*mm;
+    fHCALscint_X = fHCALscint_Y = 150.0*mm;
+    fHCALscint_Z = 1012.0*mm;
 
     G4Box* fHCALscint_solid = new G4Box("fHCALscint_solid", 0.5*fHCALscint_X, 0.5*fHCALscint_Y, 0.5*fHCALscint_Z);
-    G4LogicalVolume* fHCALscint_LV = new G4LogicalVolume(fHCALscint_solid, fHCALscintMaterial, "fHCALscint_LV");
+    G4LogicalVolume* fHCALscint_LV = new G4LogicalVolume(fHCALscint_solid, fHCALscintMaterial, "fHCALscint_log");
     
     G4Box* fHCALeabs_solid = new G4Box("fHCALeabs_solid", 0.5*fHCALscint_X, 0.5*fHCALscint_Y, 0.5*fHCALeabs_Z);
-    G4LogicalVolume* fHCALeabs_LV = new G4LogicalVolume(fHCALeabs_solid, fHCALeabsMaterial, "fHCALeabs_LV");
+    G4LogicalVolume* fHCALeabs_LV = new G4LogicalVolume(fHCALeabs_solid, fHCALeabsMaterial, "fHCALeabs_log");
 
     for(int iz = 0; iz < fHCALNpairs; iz++) 
     {
@@ -373,13 +399,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     // Create hadron arm hodoscope layer
     //--------------------------------------------------------------------------- 
 
-    G4double fHodoscint_X = 30.0 *mm;
-    G4double fHodoscint_Y = 30.0 *mm;
-    G4double fHodoscint_Z = 100.0 *mm;
+    // Dimensions of Hadron Arm Hodoscope
+    fHodoscint_X = fHodoscint_Y = 30.0 *mm;
+    fHodoscint_Z = 100.0 *mm;
 
     G4Box* fHodoscint_solid = new G4Box("fHodoscint_solid", 0.5*fHodoscint_X, 0.5*fHodoscint_Y, 0.5*fHodoscint_Z);
 
-    G4LogicalVolume* fHodoscint_LV = new G4LogicalVolume(fHodoscint_solid, fHodoscintMaterial, "fHodoscint_LV");
+    G4LogicalVolume* fHodoscint_LV = new G4LogicalVolume(fHodoscint_solid, fHodoscintMaterial, "fHodoscint_log");
 
     G4double HODO_x, HODO_y, HODO_z, HODO_th, HODO_ph;
     G4double HODO_xprime, HODO_yprime, HODO_zprime;
@@ -416,13 +442,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     // Create hadron arm shield
     //--------------------------------------------------------------------------- 
 
-    G4double fHCALshield_X = fHCALscint_X;
-    G4double fHCALshield_Y = ((fHCALNrow) * fHCALscint_Y);
-    G4double fHCALshield_Z = fNPSShieldThick;
+    // Dimensions of Hadron Arm Shield
+    fHCALshield_X = fHCALscint_X;
+    fHCALshield_Y = ((fHCALNrow) * fHCALscint_Y);
+    fHCALshield_Z = fNPSShieldThick;
 
     G4Box* fHCALshield_solid = new G4Box("fHCALshield_solid", 0.5*fHCALshield_X, 0.5*fHCALshield_Y, 0.5*fHCALshield_Z);
 
-    G4LogicalVolume* fHCALshield_LV = new G4LogicalVolume(fHCALshield_solid, fHCALshieldMaterial, "fHCALshield_LV");
+    G4LogicalVolume* fHCALshield_LV = new G4LogicalVolume(fHCALshield_solid, fHCALshieldMaterial, "fHCALshield_log");
 
     G4double HCALshield_x, HCALshield_y, HCALshield_z, HCALshield_th, HCALshield_ph;
     G4double HCALshield_xprime, HCALshield_yprime, HCALshield_zprime;
@@ -470,7 +497,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     fHodoscint_LV->SetSensitiveDetector(fRealDetectorSD);
     
     // Visualization
-    fLogicTarget->SetVisAttributes(G4Colour::Blue());
+    fTarget_LV->SetVisAttributes(G4Colour::Blue());
     fPbWO4_LV->SetVisAttributes(G4Colour::Red());
     fNPSshield_LV->SetVisAttributes(G4Colour::Cyan());
     fHCALscint_LV->SetVisAttributes(G4Colour::Yellow());
@@ -479,7 +506,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
     fHCALeabs_LV->SetVisAttributes(G4VisAttributes::Invisible);
     fWorld_LV->SetVisAttributes(G4VisAttributes::Invisible);
-    f
 
     //---------------------------------------------------------------------------
     return fWorld_PV;
@@ -529,6 +555,7 @@ void DetectorConstruction::SetWorldMaterial(const G4String& mat)
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 void DetectorConstruction::BuildBeamline()
 {
+    // Set Materials
     G4Material* VacuumMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
     G4Material* ChamberMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
     G4Material* WindowMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
@@ -536,33 +563,35 @@ void DetectorConstruction::BuildBeamline()
     G4Material* TargetCellMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
     G4Material* BeampipeMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
 
-    const G4double inch = 2.54*cm;
-
+    // Chamber Dimensions
     G4double ChamberOuterRadius = 22.5*inch;
     G4double ChamberInnerRadius = 20.5*inch;
-
     G4double ChamberHeight = 24.25*2*inch;
+
+    // Window Dimensions
     G4double WindowHeight = 19*inch;
     G4double WindowSubHeight = 15*inch;
     G4double WindowFrameHeight = 20*inch;
     G4double WindowClampHeight = 20*inch;
-
     G4double WindowFrameThickness = 1.25*inch;
     G4double WindowClampThickness = 0.750*inch;
     G4double WindowThickness = fSCWinThick;
 
+    // Target Dimensions
     G4double TargetLength = fTarLength;
     G4double TargetRadius = 0.5*50.*mm;
     G4double TargetCellLength = (0.125 + 150.)*mm;
     G4double TargetCellRadius = (0.125 + 0.5*50.)*mm;
     G4double TargetWindowThickness = 0.125*mm;
 
+    // Window Inner Dimensions
     G4double WindowInnerJoint1OuterRadius = 0.5*1.469*inch;
     G4double WindowInnerJoint1Thickness = 0.5*inch;
     G4double WindowInnerJoint2InnerRadius = 0.5*1.068*inch;
     G4double WindowInnerJoint2OuterRadius = 0.5*1.50*inch;
     G4double WindowInnerJoint2Thickness  = 0.109*inch;
 
+    // Window Outer Dimensions
     G4double WindowOuterJoint2InnerRadius = 0.5*0.68*inch;
     G4double WindowOuterJoint2OuterRadius = 0.5*1.062*inch;
     G4double WindowOuterJoint2Thickness = (0.62 + 1.562 - 0.137 - 0.06)*inch;
@@ -578,6 +607,7 @@ void DetectorConstruction::BuildBeamline()
     G4double WindowOuterJoint2_3OuterRadius = 0.5*0.738*inch;
     G4double WindowOuterJoint2_3Thickness = 0.06*inch;
 
+    // Beampipe Dimensions
     G4double Beampipe1Innerdx1 = 18.915*mm;
     G4double Beampipe1Innerdx2 = 63.4*mm;
     G4double Beampipe1Innerdy1 = Beampipe1Innerdx1;
@@ -617,9 +647,9 @@ void DetectorConstruction::BuildBeamline()
     zWindowRot->rotateZ(90*degree);                     
     G4SubtractionSolid* sChamber_sub_Window = new G4SubtractionSolid("Chamber_sub_Window", sChamberOuter, sWindowSub, zWindowRot, G4ThreeVector());
 
-    G4LogicalVolume* LogicChamber = new G4LogicalVolume(sChamber_sub_Window, ChamberMaterial, "ChamberOuter_log");
+    G4LogicalVolume* sChamberOuter_LV = new G4LogicalVolume(sChamber_sub_Window, ChamberMaterial, "sChamberOuter_log");
 
-    new G4PVPlacement(xChambRot, G4ThreeVector(), LogicChamber, "ChamberOuter_pos", fWorld_LV, false, 0);
+    new G4PVPlacement(xChambRot, G4ThreeVector(), sChamberOuter_LV, "ChamberOuter_pos", fWorld_LV, false, 0);
 
     //---------------------------------------------------------------------------
   
@@ -632,11 +662,11 @@ void DetectorConstruction::BuildBeamline()
   
     G4SubtractionSolid* sWindowFrame = new G4SubtractionSolid("WindowFrame_sol", sWindowFrame_before_sub, sWindowFrame_sub, pseudoWindowRot, G4ThreeVector());
 
-    G4LogicalVolume* LogicWindowFrame = new G4LogicalVolume(sWindowFrame, ChamberMaterial, "WindowFrame_log");
+    G4LogicalVolume* sWindowFrame_LV = new G4LogicalVolume(sWindowFrame, ChamberMaterial, "sWindowFrame_log");
 
     G4RotationMatrix *zxWindowRot = new G4RotationMatrix(0,-90*degree,-90*degree);
 
-    new G4PVPlacement(zxWindowRot, G4ThreeVector(), LogicWindowFrame, "WindowFrame_pos", fWorld_LV, false, 0);
+    new G4PVPlacement(zxWindowRot, G4ThreeVector(), sWindowFrame_LV, "WindowFrame_pos", fWorld_LV, false, 0);
 
     //---------------------------------------------------------------------------
 
@@ -646,9 +676,9 @@ void DetectorConstruction::BuildBeamline()
 
     G4SubtractionSolid* sWindowClamp = new G4SubtractionSolid("WindowClamp_sol", sWindowClamp_before_sub, sWindowClamp_sub, pseudoWindowRot, G4ThreeVector());
   
-    G4LogicalVolume* LogicWindowClamp = new G4LogicalVolume(sWindowClamp, ChamberMaterial, "WindowClamp_log");
+    G4LogicalVolume* sWindowClamp_LV = new G4LogicalVolume(sWindowClamp, ChamberMaterial, "sWindowClamp_log");
 
-    new G4PVPlacement(zxWindowRot, G4ThreeVector(), LogicWindowClamp, "WindowClamp_pos", fWorld_LV, false, 0);
+    new G4PVPlacement(zxWindowRot, G4ThreeVector(), sWindowClamp_LV, "WindowClamp_pos", fWorld_LV, false, 0);
 
     //---------------------------------------------------------------------------
     // Vacuum inside the chamber
@@ -656,9 +686,9 @@ void DetectorConstruction::BuildBeamline()
 
     G4Tubs* sChamberInner = new G4Tubs("ChamberInner_sol", 0., ChamberInnerRadius, 0.5*ChamberHeight, 0., twopi);
 
-    G4LogicalVolume* LogicInnerChamber = new G4LogicalVolume(sChamberInner, VacuumMaterial, "ChamberInner_log");
+    G4LogicalVolume* sChamberInner_LV = new G4LogicalVolume(sChamberInner, VacuumMaterial, "sChamberInner_log");
 
-    new G4PVPlacement(xChambRot, G4ThreeVector(), LogicInnerChamber, "ChamberInner_pos", fWorld_LV, false, 0);
+    new G4PVPlacement(xChambRot, G4ThreeVector(), sChamberInner_LV, "ChamberInner_pos", fWorld_LV, false, 0);
 
     //---------------------------------------------------------------------------
     // Target Cell & Target
@@ -669,17 +699,17 @@ void DetectorConstruction::BuildBeamline()
 
     G4Tubs* sTargetCell = new G4Tubs("TargetCell_sol", 0., TargetCellRadius, (0.5*TargetLength)+TargetWindowThickness, 0.,twopi); 
 
-    G4LogicalVolume* LogicTargetCell = new G4LogicalVolume(sTargetCell, TargetCellMaterial, "TargetCell_log");   
+    G4LogicalVolume* sTargetCell_LV = new G4LogicalVolume(sTargetCell, TargetCellMaterial, "sTargetCell_log");   
 
-    new G4PVPlacement(xTargetRot, G4ThreeVector(0., -43.9*cm, 0.), LogicTargetCell, "TargetCell_pos",  LogicInnerChamber, false, 0);
+    new G4PVPlacement(xTargetRot, G4ThreeVector(0., -43.9*cm, 0.), sTargetCell_LV, "TargetCell_pos",  sChamberInner_LV, false, 0);
 
     //---------------------------------------------------------------------------
 
     G4Tubs* sTarget = new G4Tubs("Target_sol", 0., TargetRadius, 0.5*TargetLength, 0.,twopi); 
 
-    fLogicTarget = new G4LogicalVolume(sTarget, TargetMaterial, "Target_log");  
+    fTarget_LV = new G4LogicalVolume(sTarget, TargetMaterial, "sTarget_LV");  
   
-    new G4PVPlacement(0, G4ThreeVector(0., 0., 0.5*TargetWindowThickness), fLogicTarget, "Target_pos", LogicTargetCell, false, 0 ); 
+    new G4PVPlacement(0, G4ThreeVector(0., 0., 0.5*TargetWindowThickness), fTarget_LV, "Target_pos", sTargetCell_LV, false, 0 ); 
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -688,8 +718,6 @@ void DetectorConstruction::BuildTarget()
     G4Material* VacuumMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
     G4Material* TargetMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_lH2");
     G4Material* TargetCellMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
-
-    const G4double inch = 2.54*cm;
 
     G4double ChamberInnerRadius = 20.5*inch;
     G4double ChamberHeight = 3*24.25*2*inch;
@@ -714,9 +742,9 @@ void DetectorConstruction::BuildTarget()
     G4Tubs* sBeamlineInner = new G4Tubs("BeamlineInner_sol", 0., BeamlineInnerRadius, BeamlineHeight, 0., twopi);
     
     G4UnionSolid* vacUnion = new G4UnionSolid("vacUnion", sChamberInner, sBeamlineInner, xChambRot, G4ThreeVector(0., -BeamlineHeight, 0.));
-    G4LogicalVolume* LogicInnerChamber = new G4LogicalVolume(vacUnion, VacuumMaterial, "ChamberInner_LV")
+    G4LogicalVolume* sInnerChamber_LV = new G4LogicalVolume(vacUnion, VacuumMaterial, "sInnerChamber_log")
 
-    new G4PVPlacement(xChambRot, G4ThreeVector(), LogicInnerChamber, "ChamberInner_pos", fWorld_LV, false, 0);
+    new G4PVPlacement(xChambRot, G4ThreeVector(), sInnerChamber_LV, "ChamberInner_pos", fWorld_LV, false, 0);
 
     LogicInnerChamber->SetVisAttributes(G4VisAttributes::Invisible);
 
@@ -729,15 +757,15 @@ void DetectorConstruction::BuildTarget()
 
     G4Tubs* sTargetCell = new G4Tubs("TargetCell_sol", 0., TargetCellRadius, (0.5*TargetLength)+TargetWindowThickness, 0., twopi);
 
-    G4LogicalVolume* LogicTargetCell = new G4LogicalVolume(sTargetCell, TargetCellMaterial, "TargetCell_LV");
+    G4LogicalVolume* sTargetCell_LV = new G4LogicalVolume(sTargetCell, TargetCellMaterial, "sTargetCell_log");
 
-    new G4PVPlacement(xTargetRot, G4ThreeVector(), LogicTargetCell, "TargetCell_pos", LogicInnerChamber, false, 0);
+    new G4PVPlacement(xTargetRot, G4ThreeVector(), sTargetCell_LV, "TargetCell_pos", sInnerChamber_LV, false, 0);
 
     //---------------------------------------------------------------------------
 
     G4Tubs* sTarget = new G4Tubs("Target_sol", 0., TargetRadius, 0.5*TargetLength, 0., twopi);
 
-    fLogicTarget = new G4LogicalVolume(sTarget, TargetMaterial, "Target_LV");
+    fTarget_LV = new G4LogicalVolume(sTarget, TargetMaterial, "Target_log");
 
-    new G4PVPlacement(0, G4ThreeVector(0., 0., 0.5*TargetWindowThickness), fLogicTarget, "Target_pos", LogicTargetCell, false, 0);
+    new G4PVPlacement(0, G4ThreeVector(0., 0., 0.5*TargetWindowThickness), fTarget_LV, "Target_pos", sTargetCell_LV, false, 0);
 }
