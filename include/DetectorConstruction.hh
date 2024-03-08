@@ -132,10 +132,40 @@ private:
     G4double fSCWinThick;
     G4double fTarLength;
     G4double fBeamline;
-    
+
+    // Experimental Hall
     G4double fExpHall_x;
     G4double fExpHall_y;
     G4double fExpHall_z;
+
+    // NPS Electron Arm
+    G4double fPbWO4_X;
+    G4double fPbWO4_Y;
+    G4double fPbWO4_Z;
+
+    // Electron Arm Shields
+    G4double fNPSshield_X;
+    G4double fNPSshield_Y;
+    G4double fNPSshield_Z;
+
+    // HCAL Proton Arm
+    G4int fHCALNpairs;
+    G4double fHCALeabs_Z;
+    G4double fHCALscint_X;
+    G4double fHCALscint_Y;
+    G4double fHCALscint_Z;
+
+    // Hadron Arm Hodoscope Layer
+    G4double fHodoscint_X;
+    G4double fHodoscint_Y;
+    G4double fHodoscint_Z;
+
+    // Hadron Arm Shield
+    G4double fHCALshield_X;
+    G4double fHCALshield_Y;
+    G4double fHCALshield_Z;
+
+    static const G4double inch = 2.54*cm;
     
     static const G4int fNPSrow = 5;
     static const G4int fNPSNcol = 240;
@@ -151,7 +181,7 @@ private:
     G4VPhysicalVolume* fWorld_PV;
     G4VPhysicalVolume* fDetVol[fNSD];
     G4LogicalVolume* fWorld_LV;
-    G4LogicalVolume* fLogicTarget;
+    G4LogicalVolume* fTarget_LV;
 
     G4Material* fWorldMaterial;
     G4Material* fPbWO4Material;
@@ -161,9 +191,6 @@ private:
     G4Material* fHodoscintMaterial;
     G4Material* fHCALshieldMaterial;
 
-    G4OpticalSurface* fSurface;
-    G4OpticalSurface* fSurface2;
-
     DetectorMessenger* fDetMessenger;
 
     G4MaterialPropertiesTable* fWorldMPT;
@@ -172,7 +199,10 @@ private:
     G4MaterialPropertiesTable* fHCALscintMPT;
     G4MaterialPropertiesTable* fHCALeabsMPT;
     G4MaterialPropertiesTable* fHodoscintMPT;
+    G4MaterialPropertiesTable* fSurfaceMPT;
     G4MaterialPropertiesTable* fHCALshieldMPT;
+
+    G4OpticalSurface* fSurface;
     
     VirtualDetectorSD* fVirtualDetectorSD;
     RealDetectorSD* fRealDetectorSD;
