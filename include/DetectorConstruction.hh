@@ -36,6 +36,7 @@
 
 #include "globals.hh"
 #include "G4OpticalSurface.hh"
+#include "G4LogicalBorderSurface.hh"
 #include "G4RunManager.hh"
 #include "G4VUserDetectorConstruction.hh"
 
@@ -180,6 +181,7 @@ private:
 
     G4VPhysicalVolume* fWorld_PV;
     G4VPhysicalVolume* fDetVol[fNSD];
+    G4LogicalBorderSurface* fPbWO4_surface[fNSD];
     G4LogicalVolume* fWorld_LV;
     G4LogicalVolume* fTarget_LV;
 
@@ -199,10 +201,21 @@ private:
     G4MaterialPropertiesTable* fHCALscintMPT;
     G4MaterialPropertiesTable* fHCALeabsMPT;
     G4MaterialPropertiesTable* fHodoscintMPT;
-    G4MaterialPropertiesTable* fSurfaceMPT;
     G4MaterialPropertiesTable* fHCALshieldMPT;
 
-    G4OpticalSurface* fSurface;
+    G4MaterialPropertiesTable* fPbWO4SurfMPT;
+    G4MaterialPropertiesTable* fNPSshieldSurfMPT;
+    G4MaterialPropertiesTable* fHCALscintSurfMPT;
+    G4MaterialPropertiesTable* fHCALeabsSurfMPT;
+    G4MaterialPropertiesTable* fHodoscintSurfMPT;
+    G4MaterialPropertiesTable* fHCALshieldSurfMPT;
+
+    G4OpticalSurface* fPbWO4Surf;
+    G4OpticalSurface* fNPSshieldSurf;
+    G4OpticalSurface* fHCALscintSurf;
+    G4OpticalSurface* fHCALeabsSurf;
+    G4OpticalSurface* fHodoscintSurf;
+    G4OpticalSurface* fHCALshieldSurf;
     
     VirtualDetectorSD* fVirtualDetectorSD;
     RealDetectorSD* fRealDetectorSD;
