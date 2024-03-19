@@ -121,61 +121,41 @@ DetectorConstruction::DetectorConstruction()
     fHCALshieldMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Pb"); // Hadron Arm Shield
 
     // ------------- Optical Properties of Materials --------------
+    // Optical Surface Initializations
+    fPbWO4Surf      = new G4OpticalSurface("fPbWO4Surface"); // NPS Electron Arm Surface
+    fNPSshieldSurf  = new G4OpticalSurface("fNPSshieldSurface"); // Electron Arm Shields Surface
+    fHCALscintSurf  = new G4OpticalSurface("fHCALscintSurface"); // HCAL Proton Arm (PMT) Surface
+    fHCALeabsSurf   = new G4OpticalSurface("fHCALeabsSurface"); // HCAL Proton Arm Shield Surface
+    fHodoscintSurf  = new G4OpticalSurface("fHodoscintSurface"); // Hadron Arm Hodoscope (PMT) Surface (Borosilicate Glass)
+    fHCALshieldSurf = new G4OpticalSurface("fHCALshieldSurface"); // Hadron Arm Shield Surface
+
+    // Optical Surface Type Setting
+    fPbWO4Surf->SetType(dielectric_dielectric);
+    fNPSshieldSurf->SetType(dielectric_metal);
+    fHCALscintSurf->SetType(dielectric_dielectric);
+    fHCALeabsSurf->SetType(dielectric_metal);
+    fHodoscintSurf->SetType(dielectric_dielectric);
+    fHCALshieldSurf->SetType(dielectric_metal);
+
+    // Optical Surface Model Finish Settings
+    fPbWO4Surf->SetFinish(polished);
+    fNPSshieldSurf->SetFinish(polished);
+    fHCALscintSurf->SetFinish(polished);
+    fHCALeabsSurf->SetFinish(polished);
+    fHodoscintSurf->SetFinish(polished);
+    fHCALshieldSurf->SetFinish(polished);
+
+    // Optical Surface Model Settings
+    fPbWO4Surf->SetModel(unified);
+    fNPSshieldSurf->SetModel(unified);
+    fHCALscintSurf->SetModel(unified);
+    fHCALeabsSurf->SetModel(unified);
+    fHodoscintSurf->SetModel(unified);
+    fHCALshieldSurf->SetModel(unified);
+
     // Optical Photon Energy and Entry Number
     const G4int NUM = 6;
     G4double pp[NUM] = {2.0*eV, 2.2*eV, 2.4*eV, 2.6*eV, 2.8*eV, 3.0*eV};
-    
-    // Optical Surface Initializations
-    fPbWO4Surf = new G4OpticalSurface("fPbWO4Surface"); // NPS Electron Arm Surface
-    fPbWO4Surf->SetType(dielectric_dielectric);
-    fPbWO4Surf->SetFinish(polished);
-    fPbWO4Surf->SetModel(unified);
-    G4double fPbWO4Surf_Reflect[NUM] = {};
-    G4double fPbWO4Surf_Trans[NUM] = {};
-    fPbWO4SurfMPT->AddProperty("REFLECTIVITY", pp, fPbWO4Surf_Reflect, NUM);
-    fPbWO4SurfMPT->AddProperty("TRANSMITTANCE", pp, fPbWO4Surf_Trans, NUM);
-    fPbWO4Surf->SetMaterialPropertiesTable(fPbWO4SurfMPT);
-    
-    
-    fNPSshieldSurf = new G4OpticalSurface("fNPSshieldSurface"); // Electron Arm Shields Surface
-    fNPSshieldSurf->SetType(dielectric_metal);
-    fNPSshieldSurf->SetFinish(polished);
-    fNPSshieldSurf->SetModel(unified);
-    G4double fNPSshieldSurf_Reflect[NUM] = {};
-    G4double fNPSshieldSurf_Trans[NUM] = {};
-    fNPSshieldSurf->SetMaterialPropertiesTable(fNPSshieldSurfMPT);
-    
-    fHCALscintSurf = new G4OpticalSurface("fHCALscintSurface"); // HCAL Proton Arm (PMT) Surface
-    fHCALscintSurf->SetType(dielectric_dielectric);
-    fHCALscintSurf->SetFinish(polished);
-    fHCALscintSurf->SetModel(unified);
-    G4double fHCALscintSurf_Reflect[NUM] = {};
-    G4double fHCALscintSurf_Trans[NUM] = {};
-    fHCALscintSurf->SetMaterialPropertiesTable(fHCALscintSurfMPT);
-    
-    fHCALeabsSurf = new G4OpticalSurface("fHCALeabsSurface"); // HCAL Proton Arm Shield Surface
-    fHCALeabsSurf->SetType(dielectric_metal);
-    fHCALeabsSurf->SetFinish(polished);
-    fHCALeabsSurf->SetModel(unified);
-    G4double fHCALeabsSurf_Reflect[NUM] = {};
-    G4double fHCALeabsSurf_Trans[NUM] = {};
-    fHCALeabsSurf->SetMaterialPropertiesTable(fHCALeabsSurfMPT);
-    
-    fHodoscintSurf = new G4OpticalSurface("fHodoscintSurface"); // Hadron Arm Hodoscope (PMT) Surface (Borosilicate Glass)
-    fHodoscintSurf->SetType(dielectric_dielectric);
-    fHodoscintSurf->SetFinish(polished);
-    fHodoscintSurf->SetModel(unified);
-    G4double fHodoscintSurf_Reflect[NUM] = {};
-    G4double fHodoscintSurf_Trans[NUM] = {};
-    fHodoscintSurf->SetMaterialPropertiesTable(fHodoscintSurfMPT);
-    
-    fHCALshieldSurf = new G4OpticalSurface("fHCALshieldSurface"); // Hadron Arm Shield Surface
-    fHCALshieldSurf->SetType(dielectric_metal);
-    fHCALshieldSurf->SetFinish(polished);
-    fHCALshieldSurf->SetModel(unified);
-    G4double fHCALshieldSurf_Reflect[NUM] = {};
-    G4double fHCALshieldSurf_Trans[NUM] = {};
-    fHCALshieldSurf->SetMaterialPropertiesTable(fHCALshieldSurf);
 
     // Refractive Index of Materials
     G4double rindex1[NUM] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0}; // Refractive Index of World (Air)
@@ -196,6 +176,18 @@ DetectorConstruction::DetectorConstruction()
     G4double fHCALscint_ScintFast[NUM] = {}; // Scintillation Fast Component of HCAL Proton Arm (Vinyltoluene)
     G4double fHodoscint_ScintFast[NUM] = {}; // Scintillation Fast Component of Hadron Arm Hodoscope (Vinyltoluene)
 
+    // Optical Surface Reflectivity
+    G4double reflect2[NUM] = {}; // Reflectivity of NPS Electron Arm (PbWO4)
+    G4double reflect3[NUM] = {}; // Reflectivity of Lead for Electron Arm Shields and Hadron Arm Shield
+    G4double reflect4[NUM] = {}; // Reflectivity of Vinyltoluene for HCAL Proton Arm and Hadron Arm Hodoscope
+    G4double reflect5[NUM] = {}; // Reflectivity of Iron for HCAL Proton Arm Shields
+    
+    // Optical Surface Transmittance
+    G4double trans2[NUM] = {}; // Transmittance of NPS Electron Arm (PbWO4)
+    G4double trans3[NUM] = {}; // Transmittance of Lead for Electron Arm Shields and Hadron Arm Shield
+    G4double trans4[NUM] = {}; // Transmittance of Vinyltoluene for HCAL Proton Arm and Hadron Arm Hodoscope
+    G4double trans4[NUM] = {}; // Transmittance of Iron for HCAL Proton Arm Shields
+    
     // Applying Refractive Indexes to MPT list
     fWorldMPT->AddProperty("RINDEX", pp, rindex1, NUM);
     fPbWO4MPT->AddProperty("RINDEX", pp, rindex2, NUM);
@@ -214,12 +206,29 @@ DetectorConstruction::DetectorConstruction()
     fHodoscintMPT->AddProperty("RINDEX", pp, absorption4, NUM);
     fHCALshieldMPT->AddProperty("RINDEX", pp, absorption3, NUM);
 
-    // Setting Optical Surface Reflectivity and Transmittance
-    fShieldSurface->SetMaterialPropertiesTable(fShieldSurfMPT);
+    // Setting Optical Surface Reflectivity Transmittance
+    fPbWO4SurfMPT->AddProperty("REFLECTIVITY", pp, reflect2, NUM);
+    fNPSshieldSurfMPT->AddProperty("REFLECTIVITY", pp, reflect3, NUM);
+    fHCALscintSurfMPT->AddProperty("REFLECTIVITY", pp, reflect4, NUM);
+    fHCALeabsSurfMPT->AddProperty("REFLECTIVITY", pp, reflect5, NUM);
+    fHodoscintSurfMPT->AddProperty("REFLECTIVITY", pp, reflect4, NUM);
+    fHCALshieldSurfMPT->AddProperty("REFLECTIVITY", pp, reflect3, NUM);
     
-    fHodoSurfMPT->AddProperty("REFLECTIVITY", pp, HodoSurf_Reflect, NUM);
-    fHodoSurfMPT->AddProperty("TRANSMITTANCE", pp, HodoSurf_Trans, NUM);
-    fHodoSurface->SetMaterialPropertiesTable(fHodoSurfMPT);
+    // Setting Optical Surface Transmittance
+    fPbWO4SurfMPT->AddProperty("TRANSMITTANCE", pp, trans2, NUM);
+    fNPSshieldSurfMPT->AddProperty("TRANSMITTANCE", pp, trans3, NUM);
+    fHCALscintSurfMPT->AddProperty("TRANSMITTANCE", pp, trans4, NUM);
+    fHCALeabsSurfMPT->AddProperty("TRANSMITTANCE", pp, trans5, NUM);
+    fHodoscintSurfMPT->AddProperty("TRANSMITTANCE", pp, trans4, NUM);
+    fHCALshieldSurfMPT->AddProperty("TRANSMITTANCE", pp, trans3, NUM);
+    
+    // Setting Optical Surface Properties
+    fPbWO4Surf->SetMaterialPropertiesTable(fPbWO4SurfMPT);
+    fNPSshieldSurf->SetMaterialPropertiesTable(fNPSshieldSurfMPT);
+    fHCALscintSurf->SetMaterialPropertiesTable(fHCALscintSurfMPT);
+    fHCALeabsSurf->SetMaterialPropertiesTable(fHCALeabsSurfMPT);
+    fHodoscintSurf->SetMaterialPropertiesTable(fHodoscintSurfMPT);
+    fHCALshieldSurf->SetMaterialPropertiesTable(fHCALshieldSurf);
 
     // Setting Scintillation Properties of Scintillators
     // NPS Electron Arm
@@ -246,7 +255,7 @@ DetectorConstruction::DetectorConstruction()
 
 DetectorConstruction::~DetectorConstruction() 
 {
-    // Eliminate Allocated Data
+    // Eliminate Allocated Data of Object MPTS
     delete fPbWO4MPT;
     delete fNPSshieldMPT;
     delete fHCALscintMPT;
@@ -255,11 +264,13 @@ DetectorConstruction::~DetectorConstruction()
     delete fHCALshieldMPT;
     delete fWorldMPT;
     delete fPbWO4SurfMPT;
+    // Eliminate Allocated Data of Optical Surface MPTS
     delete fNPSshieldSurfMPT;
     delete fHCALscintSurfMPT;
     delete fHCALeabsSurfMPT;
     delete fHodoscintSurfMPT;
     delete fHCALshieldSurfMPT;
+    // Eliminate Allocated Data of Remainder
     delete fDetMessenger;
 }
 
@@ -357,11 +368,22 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
                 G4Transform3D fNPS_t3d = G4Translate3D(G4ThreeVector(NPS_xprime, NPS_yprime, NPS_zprime)) * G4RotateZ3D(NPS_ph).inverse() * G4RotateX3D(NPS_th).inverse();
 
-                fDetVol[SDcount] new G4PVPlacement(fNPS_t3d, fPbWO4_LV, stmp, fWorld_LV, false, SDcount);
+                fDetVol[SDcount] = new G4PVPlacement(fNPS_t3d, fPbWO4_LV, stmp, fWorld_LV, false, SDcount);
 
+                // Surface
+                fPbWO4_surface[SDcount] = new G4LogicalBorderSurface("fPbWO4_Surface", fDetVol[SDcount], fWorld_PV, fPbWO4Surf);
+                fPbWO4_opticalSurface[SDcount] = dynamic_cast<G4OpticalSurface*>(fPbWO4_surface->GetSurface(fDetVol[SDcount], fWorld_PV)->GetSurfaceProperty());
+                G4cout << "******  fPbWO4_opticalSurface->DumpInfo:" << G4endl;
+                if(fPbWO4_opticalSurface[SDcount])
+                {
+                    fPbWO4_opticalSurface[SDcount]->DumpInfo();
+                }
+                G4cout << "******  end of fPbWO4_opticalSurface->DumpInfo" << G4endl;
+                
                 SDcount++;
             }
         }
+    
 
     //--------------------------------------------------------------------------- 
     // Create electron arm shields
