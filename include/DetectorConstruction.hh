@@ -181,7 +181,13 @@ private:
 
     G4VPhysicalVolume* fWorld_PV;
     G4VPhysicalVolume* fDetVol[fNSD];
+    G4VPhysicalVolume* fNPSshield_PV[fNPSNcol];
+    
+
     G4LogicalBorderSurface* fPbWO4_surface[fNSD];
+    G4LogicalBorderSurface* fNPSshield_surface[fNPSNcol];
+    G4LogicalBorderSurface* fHCALscint_surface[fNSD];
+
     G4LogicalVolume* fWorld_LV;
     G4LogicalVolume* fTarget_LV;
 
