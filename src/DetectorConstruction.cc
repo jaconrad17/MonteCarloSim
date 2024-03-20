@@ -372,7 +372,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
                 // Surface
                 fPbWO4_surface[SDcount] = new G4LogicalBorderSurface("fPbWO4_Surface", fDetVol[SDcount], fWorld_PV, fPbWO4Surf);
-                fPbWO4_opticalSurface[SDcount] = dynamic_cast<G4OpticalSurface*>(fPbWO4_surface->GetSurface(fDetVol[SDcount], fWorld_PV)->GetSurfaceProperty());
+                auto fPbWO4_opticalSurface[SDcount] = dynamic_cast<G4OpticalSurface*>(fPbWO4_surface->GetSurface(fDetVol[SDcount], fWorld_PV)->GetSurfaceProperty());
                 G4cout << "******  fPbWO4_opticalSurface->DumpInfo:" << G4endl;
                 if(fPbWO4_opticalSurface[SDcount])
                 {
@@ -420,7 +420,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
         G4Transform3D fNPSshield_t3d = G4Translate3D(G4ThreeVector(NPSshield_xprime, NPSshield_yprime, 0.0)) * G4RotateZ3D(NPSshield_ph).inverse() * G4Translate3D(G4ThreeVector(0.0, 0.0, NPSshield_zprime)) * G4RotateX3D(NPSshield_th).inverse();
 
-        new G4PVPlacement(fNPSshield_t3d, fNPSshield_LV, stmp, fWorld_LV, false, 0);
+        fNPSshield_PV[iy] = new G4PVPlacement(fNPSshield_t3d, fNPSshield_LV, stmp, fWorld_LV, false, 0);
+
+        // Surface
+        fNPSshield_surface[iy] = new G4LogicalBorderSurface("fNPSshield_Surface", fNPSshield_PV[iy], fWorld_PV, fNPSshieldSurf);
+        auto fNPSshield_opticalSurface[iy] = dynamic_cast<G4OpticalSurface*>(fNPSshield_surface->GetSurface(fNPSshield_PV[iy], fWorld_PV)->GetSurfaceProperty());
+        G4cout << "******  fNPSshield_opticalSurface->DumpInfo:" << G4endl;
+        if(fNPSshield_opticalSurface[iy])
+        {
+            fNPSshield_opticalSurface[iy]->DumpInfo();
+        }
+        G4cout << "******  end of fNPSshield_opticalSurface->DumpInfo" << G4endl;
     }
 
     //---------------------------------------------------------------------------
@@ -470,6 +480,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                 G4Transform3D HCAL_t3d = G4Translate3D(G4ThreeVector(HCAL_xprime, HCAL_yprime, HCAL_zprime)) * G4RotateZ3D(HCAL_ph).inverse() * G4RotateX3D(HCAL_th).inverse();
 
                 fDetVol[SDcount] = new G4PVPlacement(fHCAL_t3d, fHCALscint_LV, stmp, fWorld_LV, false, SDcount);
+
+                // Surface
+                fHCALscint_surface[SDcount] = new G4LogicalBorderSurface("fHCALscint_Surface", fDetVol[SDcount], fWorld_PV, fHCALscintSurf);
+                auto fHCALscint_opticalSurface[SDcount] = dynamic_cast<G4OpticalSurface*>(fHCALscint_surface->GetSurface(fDetVol[SDcount], fWorld_PV)->GetSurfaceProperty());
+                G4cout << "******  fHCALscint_opticalSurface->DumpInfo:" << G4endl;
+                if(fHCALscint_opticalSurface[SDcount])
+                {
+                    fHCALscint_opticalSurface[SDcount]->DumpInfo();
+                }
+                G4cout << "******  end of fHCALscint_opticalSurface->DumpInfo" << G4endl;
 
                 SDcount++;
             }
